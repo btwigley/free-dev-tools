@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Previewer | Free Dev Tools</title>
+    <meta name="description" content="Write Markdown and see a live rendered preview with syntax highlighting.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
+    <link rel="stylesheet" href="../shared/styles.css">
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.1/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
+
+    <style>
+        .mp-page {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        .mp-hero {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+
+        .mp-breadcrumb {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        .mp-breadcrumb a {
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        .mp-breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .mp-hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .mp-hero h1 span {
+            background: linear-gradient(135deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mp-hero p {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .mp-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .mp-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            border: 1px solid rgba(32, 198, 183, 0.2);
+        }
+
+        /* Toolbar */
+        .mp-toolbar {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.6rem 0.75rem;
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px 10px 0 0;
+            border-bottom: none;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 2rem;
+        }
+
+        .mp-toolbar-sep {
+            width: 1px;
+            height: 24px;
+            background: var(--line);
+            margin: 0 0.35rem;
+        }
+
+        .mp-tool-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .mp-tool-btn:hover {
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            border-color: rgba(32, 198, 183, 0.2);
+        }
+
+        .mp-toolbar-right {
+            margin-left: auto;
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .mp-action-btn {
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            border: 1px solid var(--line);
+            background: var(--surface-1);
+            color: var(--text-dim);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+        }
+
+        .mp-action-btn:hover {
+            border-color: rgba(32, 198, 183, 0.4);
+            color: var(--text);
+        }
+
+        /* Editor Layout */
+        .mp-editor {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 1px solid var(--line);
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        .mp-pane {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mp-pane:first-child {
+            border-right: 1px solid var(--line);
+        }
+
+        .mp-pane-header {
+            padding: 0.6rem 1rem;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--line);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .mp-input {
+            flex: 1;
+            width: 100%;
+            background: var(--surface-1);
+            border: none;
+            padding: 1rem;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+        }
+
+        .mp-preview {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* Preview Content Styles */
+        .mp-preview h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 0 0 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .mp-preview h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 1.5rem 0 0.5rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .mp-preview h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 1.25rem 0 0.5rem;
+        }
+
+        .mp-preview h4, .mp-preview h5, .mp-preview h6 {
+            font-weight: 700;
+            color: var(--text);
+            margin: 1rem 0 0.5rem;
+        }
+
+        .mp-preview p {
+            margin: 0 0 1rem;
+        }
+
+        .mp-preview a {
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        .mp-preview a:hover {
+            text-decoration: underline;
+        }
+
+        .mp-preview strong {
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .mp-preview em {
+            font-style: italic;
+        }
+
+        .mp-preview code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(32, 198, 183, 0.08);
+            border: 1px solid rgba(32, 198, 183, 0.15);
+            border-radius: 4px;
+            padding: 0.15rem 0.4rem;
+            font-size: 0.82rem;
+            color: var(--teal);
+        }
+
+        .mp-preview pre {
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 0 0 1rem;
+        }
+
+        .mp-preview pre code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: var(--text);
+            font-size: 0.82rem;
+            line-height: 1.6;
+        }
+
+        .mp-preview blockquote {
+            border-left: 3px solid var(--teal);
+            margin: 0 0 1rem;
+            padding: 0.5rem 1rem;
+            color: var(--text-dim);
+            background: rgba(32, 198, 183, 0.04);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .mp-preview blockquote p {
+            margin: 0;
+        }
+
+        .mp-preview ul, .mp-preview ol {
+            padding-left: 1.5rem;
+            margin: 0 0 1rem;
+        }
+
+        .mp-preview li {
+            margin-bottom: 0.25rem;
+        }
+
+        .mp-preview hr {
+            border: none;
+            height: 1px;
+            background: var(--line);
+            margin: 1.5rem 0;
+        }
+
+        .mp-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 0 1rem;
+            font-size: 0.85rem;
+        }
+
+        .mp-preview th {
+            background: var(--surface-1);
+            padding: 0.6rem 0.85rem;
+            text-align: left;
+            font-weight: 700;
+            color: var(--text);
+            border: 1px solid var(--line);
+        }
+
+        .mp-preview td {
+            padding: 0.5rem 0.85rem;
+            border: 1px solid var(--line);
+            color: var(--text);
+        }
+
+        .mp-preview img {
+            max-width: 100%;
+            border-radius: 6px;
+        }
+
+        .mp-preview input[type="checkbox"] {
+            margin-right: 0.4rem;
+        }
+
+        /* Notification */
+        .mp-toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--teal);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .mp-toast.visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* How It Works */
+        .mp-how {
+            margin-top: 5rem;
+            padding: 3rem 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .mp-how h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2.5rem;
+        }
+
+        .mp-how-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .mp-how-step {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .mp-how-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin: 0 auto 1rem;
+        }
+
+        .mp-how-step h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .mp-how-step p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* FAQ */
+        .mp-faq {
+            margin-top: 3rem;
+            padding-bottom: 2rem;
+        }
+
+        .mp-faq h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2rem;
+        }
+
+        .mp-faq-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .mp-faq-item:hover {
+            border-color: rgba(32, 198, 183, 0.3);
+        }
+
+        .mp-faq-q {
+            width: 100%;
+            padding: 1.1rem 1.25rem;
+            background: var(--surface-1);
+            border: none;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .mp-faq-q:hover {
+            background: var(--surface-2);
+        }
+
+        .mp-faq-q i {
+            color: var(--teal);
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .mp-faq-item.open .mp-faq-q i {
+            transform: rotate(180deg);
+        }
+
+        .mp-faq-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .mp-faq-a-inner {
+            padding: 1rem 1.25rem 1.25rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+
+        .mp-faq-item.open .mp-faq-a {
+            max-height: 300px;
+        }
+
+        .mp-page-bottom {
+            padding-bottom: 6rem;
+        }
+
+        @media (max-width: 768px) {
+            .mp-editor {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+
+            .mp-pane:first-child {
+                border-right: none;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .mp-input {
+                min-height: 250px;
+            }
+
+            .mp-preview {
+                min-height: 250px;
+            }
+
+            .mp-toolbar-right {
+                margin-left: 0;
+                margin-top: 0.25rem;
+            }
+
+            .mp-how-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="site-nav">
+    <a href="../" class="nav-brand"><i class="fas fa-tools"></i> Free Dev Tools</a>
+    <div class="nav-links">
+        <a href="../css-js-minifier/">Minifier</a>
+        <a href="../json-formatter/">JSON</a>
+        <a href="../image-optimizer/">Images</a>
+        <a href="../regex-tester/">Regex</a>
+        <a href="../jwt-decoder/">JWT</a>
+        <a href="../markdown-previewer/">Markdown</a>
+        <a href="https://github.com/btwigley/free-dev-tools" class="github-badge"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+</nav>
+
+<div class="mp-page">
+    <div class="container">
+        <section class="mp-hero">
+            <div class="mp-breadcrumb">
+                <a href="../">Free Resources</a> <span>/</span> Markdown Previewer
+            </div>
+            <h1>Markdown <span>Previewer</span></h1>
+            <p>Write Markdown and see a live formatted preview side by side. Everything runs in your browser -- nothing is uploaded to any server.</p>
+            <div class="mp-badges">
+                <span class="mp-badge"><i class="fas fa-lock"></i> 100% Private</span>
+                <span class="mp-badge"><i class="fas fa-bolt"></i> Instant</span>
+                <span class="mp-badge"><i class="fas fa-infinity"></i> No Limits</span>
+            </div>
+        </section>
+
+        <!-- Toolbar -->
+        <div class="mp-toolbar">
+            <button class="mp-tool-btn" title="Bold" onclick="mpInsert('**','**')"><i class="fas fa-bold"></i></button>
+            <button class="mp-tool-btn" title="Italic" onclick="mpInsert('*','*')"><i class="fas fa-italic"></i></button>
+            <button class="mp-tool-btn" title="Strikethrough" onclick="mpInsert('~~','~~')"><i class="fas fa-strikethrough"></i></button>
+            <div class="mp-toolbar-sep"></div>
+            <button class="mp-tool-btn" title="Heading 1" onclick="mpInsertLine('# ')"><strong>H1</strong></button>
+            <button class="mp-tool-btn" title="Heading 2" onclick="mpInsertLine('## ')"><strong>H2</strong></button>
+            <button class="mp-tool-btn" title="Heading 3" onclick="mpInsertLine('### ')"><strong>H3</strong></button>
+            <div class="mp-toolbar-sep"></div>
+            <button class="mp-tool-btn" title="Unordered List" onclick="mpInsertLine('- ')"><i class="fas fa-list-ul"></i></button>
+            <button class="mp-tool-btn" title="Ordered List" onclick="mpInsertLine('1. ')"><i class="fas fa-list-ol"></i></button>
+            <button class="mp-tool-btn" title="Blockquote" onclick="mpInsertLine('> ')"><i class="fas fa-quote-left"></i></button>
+            <div class="mp-toolbar-sep"></div>
+            <button class="mp-tool-btn" title="Inline Code" onclick="mpInsert('`','`')"><i class="fas fa-code"></i></button>
+            <button class="mp-tool-btn" title="Code Block" onclick="mpInsert('\n```\n','\n```\n')"><i class="fas fa-file-code"></i></button>
+            <button class="mp-tool-btn" title="Link" onclick="mpInsert('[','](url)')"><i class="fas fa-link"></i></button>
+            <button class="mp-tool-btn" title="Image" onclick="mpInsert('![alt](',')')"><i class="fas fa-image"></i></button>
+            <button class="mp-tool-btn" title="Horizontal Rule" onclick="mpInsertLine('\n---\n')"><i class="fas fa-minus"></i></button>
+
+            <div class="mp-toolbar-right">
+                <button class="mp-action-btn" onclick="mpCopyHtml()"><i class="fas fa-copy"></i> Copy HTML</button>
+                <button class="mp-action-btn" onclick="mpDownload()"><i class="fas fa-download"></i> Download .md</button>
+            </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="mp-editor">
+            <div class="mp-pane">
+                <div class="mp-pane-header">Markdown</div>
+                <textarea class="mp-input" id="mp-input" spellcheck="false" placeholder="Start writing Markdown here..."></textarea>
+            </div>
+            <div class="mp-pane">
+                <div class="mp-pane-header">Preview</div>
+                <div class="mp-preview" id="mp-preview"></div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="mp-toast" id="mp-toast"></div>
+
+        <!-- How It Works -->
+        <section class="mp-how">
+            <h2>How It Works</h2>
+            <div class="mp-how-grid">
+                <div class="mp-how-step">
+                    <div class="mp-how-icon"><i class="fas fa-pencil-alt"></i></div>
+                    <h3>Write Markdown</h3>
+                    <p>Type or paste Markdown in the left panel. Use the toolbar to insert formatting shortcuts like bold, headings, links, and code blocks.</p>
+                </div>
+                <div class="mp-how-step">
+                    <div class="mp-how-icon"><i class="fas fa-eye"></i></div>
+                    <h3>Live Preview</h3>
+                    <p>The right panel renders your Markdown in real time with full styling for tables, code, blockquotes, images, and more.</p>
+                </div>
+                <div class="mp-how-step">
+                    <div class="mp-how-icon"><i class="fas fa-download"></i></div>
+                    <h3>Export</h3>
+                    <p>Copy the rendered HTML to your clipboard or download the raw Markdown as a .md file. All processing stays in your browser.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="mp-faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="mp-faq-item">
+                <button class="mp-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What Markdown features are supported?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="mp-faq-a"><div class="mp-faq-a-inner">
+                    This previewer supports the full CommonMark specification plus GitHub-Flavored Markdown extensions: headings, bold, italic, strikethrough, links, images, code blocks with syntax hints, blockquotes, ordered and unordered lists, task lists, tables, and horizontal rules.
+                </div></div>
+            </div>
+
+            <div class="mp-faq-item">
+                <button class="mp-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    Is my content sent to a server?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="mp-faq-a"><div class="mp-faq-a-inner">
+                    No. Markdown parsing is handled entirely in your browser by the marked.js library. Your content never leaves your device and is never stored or logged. The rendered HTML is also sanitized with DOMPurify to prevent XSS.
+                </div></div>
+            </div>
+
+            <div class="mp-faq-item">
+                <button class="mp-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    Can I use this for README files?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="mp-faq-a"><div class="mp-faq-a-inner">
+                    Yes. This previewer renders Markdown the same way GitHub does for README.md files. You can write your README here, preview it, and download the .md file to include in your repository. It supports all the formatting you'd typically use in a GitHub README.
+                </div></div>
+            </div>
+        </section>
+
+        <div class="mp-page-bottom"></div>
+    </div>
+</div>
+
+
+
+
+<footer class="site-footer">
+    <p>Built by <a href="https://wigleystudios.com" target="_blank">Wigley Studios</a> &mdash; Free, open-source, runs entirely in your browser.</p>
+</footer>
+
+<script src="markdown-previewer.js"></script>
+</body>
+</html>

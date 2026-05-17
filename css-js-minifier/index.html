@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS/JS Minifier | Free Dev Tools</title>
+    <meta name="description" content="Minify CSS and JavaScript files instantly in your browser. No upload, no server, 100% private.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
+    <link rel="stylesheet" href="../shared/styles.css">
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/csso@5.0.5/dist/csso.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/source-map@0.7.4/dist/source-map.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/terser@5.37.0/dist/bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+    <style>
+        .mn-page {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        /* Hero */
+        .mn-hero {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+
+        .mn-breadcrumb {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        .mn-breadcrumb a {
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        .mn-breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .mn-hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .mn-hero h1 span {
+            background: linear-gradient(135deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mn-hero p {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .mn-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .mn-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            border: 1px solid rgba(32, 198, 183, 0.2);
+        }
+
+        /* Mode tabs */
+        .mn-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0 1.5rem;
+        }
+
+        .mn-tab {
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .mn-tab:hover {
+            border-color: rgba(32, 198, 183, 0.4);
+            color: var(--text);
+        }
+
+        .mn-tab.active {
+            background: var(--teal);
+            color: white;
+            border-color: var(--teal);
+        }
+
+        /* Drop zone */
+        .mn-dropzone {
+            border: 2px dashed var(--line);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            background: rgba(32, 198, 183, 0.02);
+        }
+
+        .mn-dropzone:hover,
+        .mn-dropzone.dragover {
+            border-color: var(--teal);
+            background: rgba(32, 198, 183, 0.06);
+        }
+
+        .mn-dropzone-icon {
+            font-size: 2.5rem;
+            color: var(--teal);
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+
+        .mn-dropzone h3 {
+            color: var(--text);
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .mn-dropzone p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .mn-dropzone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Paste mode */
+        .mn-paste-section {
+            display: none;
+        }
+
+        .mn-paste-section.active {
+            display: block;
+        }
+
+        .mn-file-section.active {
+            display: block;
+        }
+
+        .mn-file-section {
+            display: none;
+        }
+
+        .mn-paste-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .mn-paste-col label {
+            display: block;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .mn-textarea {
+            width: 100%;
+            min-height: 280px;
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 1rem;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.25s ease;
+        }
+
+        .mn-textarea:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        .mn-textarea.output {
+            background: rgba(32, 198, 183, 0.04);
+            cursor: default;
+        }
+
+        .mn-paste-actions {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .mn-paste-type {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .mn-paste-type-btn {
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mn-paste-type-btn.active {
+            background: rgba(32, 198, 183, 0.15);
+            color: var(--teal);
+            border-color: var(--teal);
+        }
+
+        /* Results table */
+        .mn-results {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .mn-results.visible {
+            display: block;
+        }
+
+        .mn-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .mn-results-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .mn-table-wrap {
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            overflow: hidden;
+        }
+
+        .mn-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .mn-table th {
+            background: var(--surface-1);
+            padding: 0.85rem 1rem;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .mn-table td {
+            padding: 0.85rem 1rem;
+            font-size: 0.9rem;
+            color: var(--text);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .mn-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .mn-table tr:hover td {
+            background: rgba(32, 198, 183, 0.03);
+        }
+
+        .mn-file-type {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .mn-file-type.css {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+        }
+
+        .mn-file-type.js {
+            background: rgba(246, 182, 69, 0.15);
+            color: var(--gold);
+        }
+
+        .mn-savings {
+            color: #34d399;
+            font-weight: 700;
+        }
+
+        .mn-download-btn {
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            border: none;
+            background: var(--teal);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mn-download-btn:hover {
+            background: #18b1a5;
+            transform: translateY(-1px);
+        }
+
+        /* Summary bar */
+        .mn-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            background: var(--surface-1);
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .mn-summary-stats {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .mn-stat {
+            text-align: center;
+        }
+
+        .mn-stat-value {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--teal);
+        }
+
+        .mn-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+        }
+
+        .mn-download-all {
+            padding: 0.65rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--teal), #159e90);
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mn-download-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(32, 198, 183, 0.35);
+        }
+
+        /* Processing indicator */
+        .mn-processing {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-dim);
+        }
+
+        .mn-processing.visible {
+            display: block;
+        }
+
+        .mn-processing i {
+            font-size: 2rem;
+            color: var(--teal);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error display */
+        .mn-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: #fca5a5;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .mn-error.visible {
+            display: block;
+        }
+
+        /* How It Works */
+        .mn-how {
+            margin-top: 5rem;
+            padding: 3rem 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .mn-how h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2.5rem;
+        }
+
+        .mn-how-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .mn-how-step {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .mn-how-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin: 0 auto 1rem;
+        }
+
+        .mn-how-step h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .mn-how-step p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* FAQ */
+        .mn-faq {
+            margin-top: 3rem;
+            padding-bottom: 2rem;
+        }
+
+        .mn-faq h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2rem;
+        }
+
+        .mn-faq-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .mn-faq-item:hover {
+            border-color: rgba(32, 198, 183, 0.3);
+        }
+
+        .mn-faq-q {
+            width: 100%;
+            padding: 1.1rem 1.25rem;
+            background: var(--surface-1);
+            border: none;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .mn-faq-q:hover {
+            background: var(--surface-2);
+        }
+
+        .mn-faq-q i {
+            color: var(--teal);
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .mn-faq-item.open .mn-faq-q i {
+            transform: rotate(180deg);
+        }
+
+        .mn-faq-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .mn-faq-a-inner {
+            padding: 1rem 1.25rem 1.25rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+
+        .mn-faq-item.open .mn-faq-a {
+            max-height: 300px;
+        }
+
+        /* Bottom spacing */
+        .mn-page-bottom {
+            padding-bottom: 6rem;
+        }
+
+        @media (max-width: 768px) {
+            .mn-paste-row {
+                grid-template-columns: 1fr;
+            }
+
+            .mn-summary {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .mn-summary-stats {
+                justify-content: center;
+            }
+
+            .mn-how-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="site-nav">
+    <a href="../" class="nav-brand"><i class="fas fa-tools"></i> Free Dev Tools</a>
+    <div class="nav-links">
+        <a href="../css-js-minifier/">Minifier</a>
+        <a href="../json-formatter/">JSON</a>
+        <a href="../image-optimizer/">Images</a>
+        <a href="../regex-tester/">Regex</a>
+        <a href="../jwt-decoder/">JWT</a>
+        <a href="../markdown-previewer/">Markdown</a>
+        <a href="https://github.com/btwigley/free-dev-tools" class="github-badge"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+</nav>
+
+<div class="mn-page">
+    <div class="container">
+        <!-- Hero -->
+        <section class="mn-hero">
+            <div class="mn-breadcrumb">
+                <a href="../">Free Resources</a> <span>/</span> CSS/JS Minifier
+            </div>
+            <h1>CSS/JS <span>Minifier</span></h1>
+            <p>Minify CSS and JavaScript files instantly. Everything runs in your browser -- nothing is uploaded to any server.</p>
+            <div class="mn-badges">
+                <span class="mn-badge"><i class="fas fa-lock"></i> 100% Private</span>
+                <span class="mn-badge"><i class="fas fa-bolt"></i> Instant</span>
+                <span class="mn-badge"><i class="fas fa-infinity"></i> No Limits</span>
+            </div>
+        </section>
+
+        <!-- Mode Tabs -->
+        <div class="mn-tabs">
+            <button class="mn-tab active" data-mode="file" onclick="switchMode('file')">
+                <i class="fas fa-file-upload"></i> Upload Files
+            </button>
+            <button class="mn-tab" data-mode="paste" onclick="switchMode('paste')">
+                <i class="fas fa-paste"></i> Paste Code
+            </button>
+        </div>
+
+        <!-- File Upload Mode -->
+        <div class="mn-file-section active" id="file-section">
+            <div class="mn-dropzone" id="dropzone">
+                <input type="file" id="file-input" multiple accept=".css,.js">
+                <div class="mn-dropzone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <h3>Drag & drop CSS/JS files here</h3>
+                <p>or click to browse. Accepts <strong>.css</strong> and <strong>.js</strong> files. Multiple files supported.</p>
+            </div>
+        </div>
+
+        <!-- Paste Code Mode -->
+        <div class="mn-paste-section" id="paste-section">
+            <div class="mn-paste-type">
+                <button class="mn-paste-type-btn active" data-type="css" onclick="switchPasteType('css')">CSS</button>
+                <button class="mn-paste-type-btn" data-type="js" onclick="switchPasteType('js')">JavaScript</button>
+            </div>
+            <div class="mn-paste-row">
+                <div class="mn-paste-col">
+                    <label>Input</label>
+                    <textarea class="mn-textarea" id="paste-input" placeholder="Paste your CSS or JavaScript code here..."></textarea>
+                </div>
+                <div class="mn-paste-col">
+                    <label>Minified Output</label>
+                    <textarea class="mn-textarea output" id="paste-output" readonly placeholder="Minified output will appear here..."></textarea>
+                </div>
+            </div>
+            <div id="paste-error" class="mn-error"></div>
+            <div class="mn-paste-actions">
+                <button class="mn-download-btn" onclick="minifyPaste()" style="padding: 0.6rem 1.5rem; font-size: 0.95rem;">
+                    <i class="fas fa-compress-alt"></i> Minify
+                </button>
+                <button class="mn-download-btn" onclick="copyOutput()" style="padding: 0.6rem 1.5rem; font-size: 0.95rem; background: var(--surface-1); border: 1px solid var(--line); color: var(--text);">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="mn-download-btn" onclick="downloadPasteOutput()" style="padding: 0.6rem 1.5rem; font-size: 0.95rem; background: var(--surface-1); border: 1px solid var(--line); color: var(--text);">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+
+        <!-- Processing Indicator -->
+        <div class="mn-processing" id="processing">
+            <i class="fas fa-circle-notch"></i>
+            <p>Minifying files...</p>
+        </div>
+
+        <!-- Results -->
+        <div class="mn-results" id="results">
+            <div class="mn-results-header">
+                <h2>Results</h2>
+                <button class="mn-download-btn" onclick="clearResults()" style="background: var(--surface-1); border: 1px solid var(--line); color: var(--text-dim);">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+            <div class="mn-table-wrap">
+                <table class="mn-table">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Type</th>
+                            <th>Original</th>
+                            <th>Minified</th>
+                            <th>Saved</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body"></tbody>
+                </table>
+            </div>
+            <div class="mn-summary" id="summary">
+                <div class="mn-summary-stats">
+                    <div class="mn-stat">
+                        <div class="mn-stat-value" id="stat-files">0</div>
+                        <div class="mn-stat-label">Files</div>
+                    </div>
+                    <div class="mn-stat">
+                        <div class="mn-stat-value" id="stat-original">0 KB</div>
+                        <div class="mn-stat-label">Original</div>
+                    </div>
+                    <div class="mn-stat">
+                        <div class="mn-stat-value" id="stat-minified">0 KB</div>
+                        <div class="mn-stat-label">Minified</div>
+                    </div>
+                    <div class="mn-stat">
+                        <div class="mn-stat-value" id="stat-saved">0%</div>
+                        <div class="mn-stat-label">Saved</div>
+                    </div>
+                </div>
+                <button class="mn-download-all" id="download-all-btn" onclick="downloadAll()">
+                    <i class="fas fa-download"></i> Download All (.zip)
+                </button>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <section class="mn-how">
+            <h2>How It Works</h2>
+            <div class="mn-how-grid">
+                <div class="mn-how-step">
+                    <div class="mn-how-icon"><i class="fas fa-file-upload"></i></div>
+                    <h3>Upload or Paste</h3>
+                    <p>Drag and drop .css or .js files, or switch to Paste mode to minify code directly. Process multiple files at once.</p>
+                </div>
+                <div class="mn-how-step">
+                    <div class="mn-how-icon"><i class="fas fa-compress-alt"></i></div>
+                    <h3>Instant Minification</h3>
+                    <p>CSS is minified with csso and JavaScript with Terser -- the same engines used by major build tools. Results appear instantly.</p>
+                </div>
+                <div class="mn-how-step">
+                    <div class="mn-how-icon"><i class="fas fa-download"></i></div>
+                    <h3>Download Results</h3>
+                    <p>Download each file individually or grab all minified files as a single .zip archive. See exact size savings per file.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="mn-faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="mn-faq-item">
+                <button class="mn-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What is minification and why does it matter?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="mn-faq-a"><div class="mn-faq-a-inner">
+                    Minification removes whitespace, comments, and shortens variable names in CSS and JavaScript without changing functionality. This reduces file size, which means faster page loads, lower bandwidth costs, and better Core Web Vitals scores -- all of which improve SEO and user experience.
+                </div></div>
+            </div>
+
+            <div class="mn-faq-item">
+                <button class="mn-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    Will minification break my code?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="mn-faq-a"><div class="mn-faq-a-inner">
+                    No. This tool uses production-grade minifiers (csso for CSS, Terser for JS) that are designed to preserve functionality. However, it's always good practice to test minified output before deploying. If your JavaScript relies on function name reflection, enable the "keep names" option in your build pipeline.
+                </div></div>
+            </div>
+
+            <div class="mn-faq-item">
+                <button class="mn-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    Is my code uploaded to a server?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="mn-faq-a"><div class="mn-faq-a-inner">
+                    No. All minification happens entirely in your browser. The csso and Terser libraries run locally via JavaScript. Your source code never leaves your device, making this tool safe for proprietary and sensitive codebases.
+                </div></div>
+            </div>
+
+            <div class="mn-faq-item">
+                <button class="mn-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What's the difference between CSS and JavaScript minification?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="mn-faq-a"><div class="mn-faq-a-inner">
+                    CSS minification removes whitespace, comments, and merges duplicate rules. JavaScript minification is more aggressive -- it also shortens variable names, removes dead code, and optimizes expressions. JS minification typically achieves higher compression ratios (30-60% vs 15-30% for CSS).
+                </div></div>
+            </div>
+        </section>
+
+        <div class="mn-page-bottom"></div>
+    </div>
+</div>
+
+
+
+
+<footer class="site-footer">
+    <p>Built by <a href="https://wigleystudios.com" target="_blank">Wigley Studios</a> &mdash; Free, open-source, runs entirely in your browser.</p>
+</footer>
+
+<script src="minifier.js"></script>
+</body>
+</html>

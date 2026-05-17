@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Dev Tools | Open-Source Browser-Based Developer Utilities</title>
+    <meta name="description" content="Six free, open-source developer tools that run entirely in your browser. No server, no sign-up, 100% private.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
+    <link rel="stylesheet" href="shared/styles.css">
+    <style>
+        .landing {
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        .landing-hero {
+            text-align: center;
+            padding: 4rem 0 3rem;
+        }
+
+        .landing-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .landing-hero h1 span {
+            background: linear-gradient(135deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .landing-hero p {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .landing-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .landing-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            border: 1px solid rgba(32, 198, 183, 0.2);
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem 0 4rem;
+        }
+
+        .tool-card {
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+        }
+
+        .tool-card:hover {
+            border-color: var(--teal);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(32, 198, 183, 0.12);
+            text-decoration: none;
+        }
+
+        .tool-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .tool-card h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-card p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .tool-card .arrow {
+            margin-top: 1.25rem;
+            font-size: 0.85rem;
+            color: var(--teal);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="site-nav">
+    <a href="./" class="nav-brand"><i class="fas fa-tools"></i> Free Dev Tools</a>
+    <div class="nav-links">
+        <a href="https://github.com/btwigley/free-dev-tools" class="github-badge"><i class="fab fa-github"></i> Star on GitHub</a>
+    </div>
+</nav>
+
+<div class="landing">
+    <div class="container">
+        <section class="landing-hero">
+            <h1>Free <span>Dev Tools</span></h1>
+            <p>Six browser-based developer utilities. No sign-up, no server, no tracking. Everything runs locally in your browser.</p>
+            <div class="landing-badges">
+                <span class="landing-badge"><i class="fas fa-lock"></i> 100% Private</span>
+                <span class="landing-badge"><i class="fas fa-code"></i> Open Source</span>
+                <span class="landing-badge"><i class="fas fa-bolt"></i> Instant</span>
+                <span class="landing-badge"><i class="fas fa-infinity"></i> No Limits</span>
+            </div>
+        </section>
+
+        <div class="tools-grid">
+            <a href="css-js-minifier/" class="tool-card">
+                <div class="tool-card-icon"><i class="fas fa-compress-alt"></i></div>
+                <h2>CSS/JS Minifier</h2>
+                <p>Drag-and-drop or paste CSS/JavaScript to minify instantly. Uses csso and Terser — the same engines used by major build tools.</p>
+                <div class="arrow">Try it &rarr;</div>
+            </a>
+
+            <a href="json-formatter/" class="tool-card">
+                <div class="tool-card-icon"><i class="fas fa-code"></i></div>
+                <h2>JSON Formatter & Validator</h2>
+                <p>Format, validate, and diff-compare JSON. Syntax highlighting, collapsible trees, and real-time error detection.</p>
+                <div class="arrow">Try it &rarr;</div>
+            </a>
+
+            <a href="image-optimizer/" class="tool-card">
+                <div class="tool-card-icon"><i class="fas fa-image"></i></div>
+                <h2>Image Optimizer</h2>
+                <p>Compress and resize images using Canvas. Batch process multiple files, preview results, download as zip.</p>
+                <div class="arrow">Try it &rarr;</div>
+            </a>
+
+            <a href="regex-tester/" class="tool-card">
+                <div class="tool-card-icon"><i class="fas fa-asterisk"></i></div>
+                <h2>Regex Tester</h2>
+                <p>Test regular expressions with real-time matching, capture groups, and flag controls. Instant visual feedback.</p>
+                <div class="arrow">Try it &rarr;</div>
+            </a>
+
+            <a href="jwt-decoder/" class="tool-card">
+                <div class="tool-card-icon"><i class="fas fa-key"></i></div>
+                <h2>JWT Decoder</h2>
+                <p>Decode and inspect JSON Web Tokens. View header, payload, and expiration info without any server contact.</p>
+                <div class="arrow">Try it &rarr;</div>
+            </a>
+
+            <a href="markdown-previewer/" class="tool-card">
+                <div class="tool-card-icon"><i class="fab fa-markdown"></i></div>
+                <h2>Markdown Previewer</h2>
+                <p>Write Markdown and see a live rendered preview. Supports GFM tables, code blocks, and task lists.</p>
+                <div class="arrow">Try it &rarr;</div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
+    <p>Built by <a href="https://wigleystudios.com" target="_blank">Wigley Studios</a> &mdash; Free, open-source, runs entirely in your browser.</p>
+</footer>
+
+</body>
+</html>

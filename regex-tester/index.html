@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regex Tester | Free Dev Tools</title>
+    <meta name="description" content="Test regular expressions with real-time matching, groups, and explanations.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
+    <link rel="stylesheet" href="../shared/styles.css">
+
+    <style>
+        .rt-page {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        .rt-hero {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+
+        .rt-breadcrumb {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        .rt-breadcrumb a {
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        .rt-breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .rt-hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .rt-hero h1 span {
+            background: linear-gradient(135deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .rt-hero p {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .rt-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .rt-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            border: 1px solid rgba(32, 198, 183, 0.2);
+        }
+
+        /* Pattern Input */
+        .rt-pattern-bar {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            margin: 2rem 0 1rem;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--surface-1);
+            transition: border-color 0.25s ease;
+        }
+
+        .rt-pattern-bar:focus-within {
+            border-color: var(--teal);
+        }
+
+        .rt-pattern-slash {
+            display: flex;
+            align-items: center;
+            padding: 0 0.75rem;
+            color: var(--teal);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            user-select: none;
+        }
+
+        .rt-pattern-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0.85rem 0;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .rt-pattern-input::placeholder {
+            color: var(--text-dim);
+            opacity: 0.6;
+        }
+
+        /* Flags */
+        .rt-flags {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 0 0.5rem;
+        }
+
+        .rt-flag {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rt-flag:hover {
+            background: rgba(32, 198, 183, 0.08);
+            color: var(--text);
+        }
+
+        .rt-flag.active {
+            background: rgba(32, 198, 183, 0.15);
+            color: var(--teal);
+            border-color: rgba(32, 198, 183, 0.3);
+        }
+
+        /* Test String */
+        .rt-test-area {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .rt-test-label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rt-match-count {
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--teal);
+            font-weight: 600;
+        }
+
+        .rt-test-highlight {
+            width: 100%;
+            min-height: 200px;
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text);
+            position: relative;
+            overflow: auto;
+            transition: border-color 0.25s ease;
+        }
+
+        .rt-test-highlight:focus-within {
+            border-color: var(--teal);
+        }
+
+        .rt-test-input {
+            width: 100%;
+            min-height: 200px;
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: transparent;
+            caret-color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            resize: vertical;
+            outline: none;
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 2;
+        }
+
+        .rt-test-render {
+            white-space: pre-wrap;
+            word-break: break-word;
+            pointer-events: none;
+        }
+
+        .rt-hl {
+            background: rgba(32, 198, 183, 0.25);
+            border-radius: 2px;
+            outline: 1px solid rgba(32, 198, 183, 0.5);
+        }
+
+        .rt-hl-alt {
+            background: rgba(246, 182, 69, 0.25);
+            border-radius: 2px;
+            outline: 1px solid rgba(246, 182, 69, 0.5);
+        }
+
+        /* Error */
+        .rt-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .rt-error.visible {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rt-error i {
+            color: #ef4444;
+            flex-shrink: 0;
+        }
+
+        /* Results Panel */
+        .rt-results {
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .rt-results-header {
+            padding: 0.85rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text);
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rt-results-body {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .rt-match-row {
+            display: grid;
+            grid-template-columns: 60px 1fr 100px 100px;
+            padding: 0.65rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.8rem;
+            align-items: center;
+        }
+
+        .rt-match-row:last-child {
+            border-bottom: none;
+        }
+
+        .rt-match-row:hover {
+            background: rgba(32, 198, 183, 0.03);
+        }
+
+        .rt-match-idx {
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .rt-match-val {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--teal);
+            word-break: break-all;
+        }
+
+        .rt-match-pos {
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .rt-match-groups {
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .rt-match-table-header {
+            display: grid;
+            grid-template-columns: 60px 1fr 100px 100px;
+            padding: 0.6rem 1.25rem;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--line);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-dim);
+        }
+
+        .rt-no-matches {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* Cheat Sheet */
+        .rt-cheatsheet {
+            margin-top: 1.5rem;
+        }
+
+        .rt-cheatsheet-toggle {
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 0.85rem 1.25rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .rt-cheatsheet-toggle:hover {
+            border-color: rgba(32, 198, 183, 0.3);
+        }
+
+        .rt-cheatsheet-toggle i {
+            color: var(--teal);
+            transition: transform 0.3s ease;
+        }
+
+        .rt-cheatsheet-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .rt-cheatsheet.open .rt-cheatsheet-toggle i {
+            transform: rotate(180deg);
+        }
+
+        .rt-cheatsheet.open .rt-cheatsheet-body {
+            max-height: 800px;
+        }
+
+        .rt-cheatsheet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            padding: 1.25rem 0 0;
+        }
+
+        .rt-cheat-group h4 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--teal);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.5rem;
+        }
+
+        .rt-cheat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+            font-size: 0.8rem;
+        }
+
+        .rt-cheat-pattern {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--teal);
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .rt-cheat-pattern:hover {
+            color: var(--gold);
+        }
+
+        .rt-cheat-desc {
+            color: var(--text-dim);
+        }
+
+        /* How It Works */
+        .rt-how {
+            margin-top: 5rem;
+            padding: 3rem 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .rt-how h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2.5rem;
+        }
+
+        .rt-how-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .rt-how-step {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .rt-how-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin: 0 auto 1rem;
+        }
+
+        .rt-how-step h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .rt-how-step p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* FAQ */
+        .rt-faq {
+            margin-top: 3rem;
+            padding-bottom: 2rem;
+        }
+
+        .rt-faq h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2rem;
+        }
+
+        .rt-faq-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .rt-faq-item:hover {
+            border-color: rgba(32, 198, 183, 0.3);
+        }
+
+        .rt-faq-q {
+            width: 100%;
+            padding: 1.1rem 1.25rem;
+            background: var(--surface-1);
+            border: none;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .rt-faq-q:hover {
+            background: var(--surface-2);
+        }
+
+        .rt-faq-q i {
+            color: var(--teal);
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .rt-faq-item.open .rt-faq-q i {
+            transform: rotate(180deg);
+        }
+
+        .rt-faq-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .rt-faq-a-inner {
+            padding: 1rem 1.25rem 1.25rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+
+        .rt-faq-item.open .rt-faq-a {
+            max-height: 300px;
+        }
+
+        .rt-page-bottom {
+            padding-bottom: 6rem;
+        }
+
+        @media (max-width: 768px) {
+            .rt-match-row,
+            .rt-match-table-header {
+                grid-template-columns: 40px 1fr 70px;
+            }
+
+            .rt-match-groups {
+                display: none;
+            }
+
+            .rt-cheatsheet-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .rt-how-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="site-nav">
+    <a href="../" class="nav-brand"><i class="fas fa-tools"></i> Free Dev Tools</a>
+    <div class="nav-links">
+        <a href="../css-js-minifier/">Minifier</a>
+        <a href="../json-formatter/">JSON</a>
+        <a href="../image-optimizer/">Images</a>
+        <a href="../regex-tester/">Regex</a>
+        <a href="../jwt-decoder/">JWT</a>
+        <a href="../markdown-previewer/">Markdown</a>
+        <a href="https://github.com/btwigley/free-dev-tools" class="github-badge"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+</nav>
+
+<div class="rt-page">
+    <div class="container">
+        <section class="rt-hero">
+            <div class="rt-breadcrumb">
+                <a href="../">Free Resources</a> <span>/</span> Regex Tester
+            </div>
+            <h1>Regex <span>Tester</span></h1>
+            <p>Build and test regular expressions with live highlighting and match details. Everything runs in your browser -- nothing is uploaded to any server.</p>
+            <div class="rt-badges">
+                <span class="rt-badge"><i class="fas fa-lock"></i> 100% Private</span>
+                <span class="rt-badge"><i class="fas fa-bolt"></i> Instant</span>
+                <span class="rt-badge"><i class="fas fa-infinity"></i> No Limits</span>
+            </div>
+        </section>
+
+        <!-- Pattern Input -->
+        <div class="rt-pattern-bar">
+            <div class="rt-pattern-slash">/</div>
+            <input type="text" class="rt-pattern-input" id="rt-pattern" placeholder="Enter regex pattern..." spellcheck="false" autocomplete="off">
+            <div class="rt-pattern-slash">/</div>
+            <div class="rt-flags">
+                <button class="rt-flag active" data-flag="g" title="Global">g</button>
+                <button class="rt-flag" data-flag="i" title="Case insensitive">i</button>
+                <button class="rt-flag" data-flag="m" title="Multiline">m</button>
+                <button class="rt-flag" data-flag="s" title="Dotall">s</button>
+                <button class="rt-flag" data-flag="u" title="Unicode">u</button>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div class="rt-error" id="rt-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="rt-error-msg"></span>
+        </div>
+
+        <!-- Test String -->
+        <div class="rt-test-area">
+            <div class="rt-test-label">
+                <span>Test String</span>
+                <span class="rt-match-count" id="rt-match-count"></span>
+            </div>
+            <div class="rt-test-highlight">
+                <div class="rt-test-render" id="rt-render"></div>
+                <textarea class="rt-test-input" id="rt-input" placeholder="Type or paste your test string here..." spellcheck="false"></textarea>
+            </div>
+        </div>
+
+        <!-- Match Results -->
+        <div class="rt-results" id="rt-results" style="display: none;">
+            <div class="rt-results-header">
+                <span>Match Details</span>
+            </div>
+            <div class="rt-match-table-header">
+                <span>#</span>
+                <span>Match</span>
+                <span>Position</span>
+                <span>Groups</span>
+            </div>
+            <div class="rt-results-body" id="rt-results-body"></div>
+        </div>
+
+        <!-- Cheat Sheet -->
+        <div class="rt-cheatsheet" id="rt-cheatsheet">
+            <button class="rt-cheatsheet-toggle" onclick="document.getElementById('rt-cheatsheet').classList.toggle('open')">
+                <span><i class="fas fa-book-open" style="margin-right: 0.5rem;"></i>Quick Reference</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="rt-cheatsheet-body">
+                <div class="rt-cheatsheet-grid">
+                    <div class="rt-cheat-group">
+                        <h4>Character Classes</h4>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">.</span><span class="rt-cheat-desc">Any character</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\d</span><span class="rt-cheat-desc">Digit [0-9]</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\w</span><span class="rt-cheat-desc">Word [a-zA-Z0-9_]</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\s</span><span class="rt-cheat-desc">Whitespace</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">\D \W \S</span><span class="rt-cheat-desc">Negated versions</span></div>
+                    </div>
+                    <div class="rt-cheat-group">
+                        <h4>Quantifiers</h4>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">*</span><span class="rt-cheat-desc">0 or more</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">+</span><span class="rt-cheat-desc">1 or more</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">?</span><span class="rt-cheat-desc">0 or 1</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">{n}</span><span class="rt-cheat-desc">Exactly n</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">{n,m}</span><span class="rt-cheat-desc">Between n and m</span></div>
+                    </div>
+                    <div class="rt-cheat-group">
+                        <h4>Anchors & Groups</h4>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">^</span><span class="rt-cheat-desc">Start of string</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">$</span><span class="rt-cheat-desc">End of string</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">\b</span><span class="rt-cheat-desc">Word boundary</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">(abc)</span><span class="rt-cheat-desc">Capture group</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">(?:abc)</span><span class="rt-cheat-desc">Non-capture group</span></div>
+                    </div>
+                    <div class="rt-cheat-group">
+                        <h4>Common Patterns</h4>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}</span><span class="rt-cheat-desc">Email</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">https?://[^\s]+</span><span class="rt-cheat-desc">URL</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}</span><span class="rt-cheat-desc">IPv4</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})</span><span class="rt-cheat-desc">Hex color</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <section class="rt-how">
+            <h2>How It Works</h2>
+            <div class="rt-how-grid">
+                <div class="rt-how-step">
+                    <div class="rt-how-icon"><i class="fas fa-pencil-alt"></i></div>
+                    <h3>Write Your Pattern</h3>
+                    <p>Enter a regex pattern in the input bar. Toggle flags like global (g), case-insensitive (i), and multiline (m) with a click.</p>
+                </div>
+                <div class="rt-how-step">
+                    <div class="rt-how-icon"><i class="fas fa-highlighter"></i></div>
+                    <h3>See Live Matches</h3>
+                    <p>Type or paste a test string and see matches highlighted in real time. Alternating colors distinguish adjacent matches.</p>
+                </div>
+                <div class="rt-how-step">
+                    <div class="rt-how-icon"><i class="fas fa-list-ol"></i></div>
+                    <h3>Inspect Details</h3>
+                    <p>The match table shows every match value, position index, and capture groups. Click reference patterns to load them instantly.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="rt-faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="rt-faq-item">
+                <button class="rt-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What regex flavor does this tool use?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="rt-faq-a"><div class="rt-faq-a-inner">
+                    This tool uses JavaScript's built-in RegExp engine, which follows the ECMAScript specification. It supports all standard features including lookaheads, lookbehinds (ES2018+), named groups, and the Unicode flag. This is the same engine used in Node.js and all major browsers.
+                </div></div>
+            </div>
+
+            <div class="rt-faq-item">
+                <button class="rt-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    Is my data sent to a server?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="rt-faq-a"><div class="rt-faq-a-inner">
+                    No. All pattern matching happens entirely in your browser. Your test strings and patterns never leave your device and are never logged or stored anywhere.
+                </div></div>
+            </div>
+
+            <div class="rt-faq-item">
+                <button class="rt-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What do the flag buttons mean?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="rt-faq-a"><div class="rt-faq-a-inner">
+                    <strong>g</strong> (global) finds all matches instead of stopping at the first. <strong>i</strong> (case-insensitive) ignores letter case. <strong>m</strong> (multiline) makes ^ and $ match line starts/ends. <strong>s</strong> (dotall) makes . match newlines. <strong>u</strong> (unicode) enables full Unicode matching.
+                </div></div>
+            </div>
+        </section>
+
+        <div class="rt-page-bottom"></div>
+    </div>
+</div>
+
+
+
+
+<footer class="site-footer">
+    <p>Built by <a href="https://wigleystudios.com" target="_blank">Wigley Studios</a> &mdash; Free, open-source, runs entirely in your browser.</p>
+</footer>
+
+<script src="regex-tester.js"></script>
+</body>
+</html>

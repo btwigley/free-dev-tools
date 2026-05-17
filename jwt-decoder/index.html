@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Decoder | Free Dev Tools</title>
+    <meta name="description" content="Decode and inspect JSON Web Tokens instantly. No verification, no server, 100% private.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
+    <link rel="stylesheet" href="../shared/styles.css">
+
+    <style>
+        .jd-page {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        .jd-hero {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+
+        .jd-breadcrumb {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        .jd-breadcrumb a {
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        .jd-breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .jd-hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .jd-hero h1 span {
+            background: linear-gradient(135deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .jd-hero p {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .jd-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .jd-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            border: 1px solid rgba(32, 198, 183, 0.2);
+        }
+
+        /* Input */
+        .jd-input-section {
+            margin: 2rem 0 1.5rem;
+        }
+
+        .jd-input-label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .jd-btn-clear {
+            padding: 0.3rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--line);
+            background: var(--surface-1);
+            color: var(--text-dim);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .jd-btn-clear:hover {
+            border-color: rgba(32, 198, 183, 0.4);
+            color: var(--text);
+        }
+
+        .jd-textarea {
+            width: 100%;
+            min-height: 120px;
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 1rem;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.25s ease;
+            word-break: break-all;
+        }
+
+        .jd-textarea:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        /* Error */
+        .jd-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .jd-error.visible {
+            display: flex;
+        }
+
+        .jd-error i {
+            color: #ef4444;
+            flex-shrink: 0;
+        }
+
+        /* Expiration Status */
+        .jd-status {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .jd-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .jd-status-valid {
+            background: rgba(34, 197, 94, 0.12);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .jd-status-expired {
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .jd-status-no-exp {
+            background: rgba(251, 191, 36, 0.12);
+            color: #fde68a;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        /* Decoded Sections */
+        .jd-decoded {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .jd-section {
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .jd-section:hover {
+            border-color: rgba(32, 198, 183, 0.3);
+        }
+
+        .jd-section-header {
+            padding: 0.75rem 1rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .jd-section-header-blue {
+            color: #7dd3fc;
+            border-left: 3px solid #7dd3fc;
+        }
+
+        .jd-section-header-purple {
+            color: #c4b5fd;
+            border-left: 3px solid #c4b5fd;
+        }
+
+        .jd-section-header-teal {
+            color: var(--teal);
+            border-left: 3px solid var(--teal);
+        }
+
+        .jd-section-body {
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.7;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text);
+            min-height: 100px;
+        }
+
+        .jd-key { color: #7dd3fc; }
+        .jd-string { color: #86efac; }
+        .jd-number { color: #fbbf24; }
+        .jd-boolean { color: #c4b5fd; }
+        .jd-null { color: #94a3b8; font-style: italic; }
+        .jd-bracket { color: var(--text-dim); }
+
+        /* Claims Table */
+        .jd-claims {
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .jd-claims-header {
+            padding: 0.85rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .jd-claim-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr;
+            padding: 0.65rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.8rem;
+            align-items: start;
+        }
+
+        .jd-claim-row:last-child {
+            border-bottom: none;
+        }
+
+        .jd-claim-row:hover {
+            background: rgba(32, 198, 183, 0.03);
+        }
+
+        .jd-claim-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--teal);
+        }
+
+        .jd-claim-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        .jd-claim-desc {
+            color: var(--text-dim);
+            font-size: 0.78rem;
+        }
+
+        .jd-claim-time {
+            color: var(--gold);
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* How It Works */
+        .jd-how {
+            margin-top: 5rem;
+            padding: 3rem 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .jd-how h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2.5rem;
+        }
+
+        .jd-how-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .jd-how-step {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .jd-how-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin: 0 auto 1rem;
+        }
+
+        .jd-how-step h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .jd-how-step p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* FAQ */
+        .jd-faq {
+            margin-top: 3rem;
+            padding-bottom: 2rem;
+        }
+
+        .jd-faq h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2rem;
+        }
+
+        .jd-faq-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .jd-faq-item:hover {
+            border-color: rgba(32, 198, 183, 0.3);
+        }
+
+        .jd-faq-q {
+            width: 100%;
+            padding: 1.1rem 1.25rem;
+            background: var(--surface-1);
+            border: none;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .jd-faq-q:hover {
+            background: var(--surface-2);
+        }
+
+        .jd-faq-q i {
+            color: var(--teal);
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .jd-faq-item.open .jd-faq-q i {
+            transform: rotate(180deg);
+        }
+
+        .jd-faq-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .jd-faq-a-inner {
+            padding: 1rem 1.25rem 1.25rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+
+        .jd-faq-item.open .jd-faq-a {
+            max-height: 300px;
+        }
+
+        .jd-page-bottom {
+            padding-bottom: 6rem;
+        }
+
+        .jd-hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .jd-decoded {
+                grid-template-columns: 1fr;
+            }
+
+            .jd-claim-row {
+                grid-template-columns: 80px 1fr;
+            }
+
+            .jd-claim-desc {
+                display: none;
+            }
+
+            .jd-how-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="site-nav">
+    <a href="../" class="nav-brand"><i class="fas fa-tools"></i> Free Dev Tools</a>
+    <div class="nav-links">
+        <a href="../css-js-minifier/">Minifier</a>
+        <a href="../json-formatter/">JSON</a>
+        <a href="../image-optimizer/">Images</a>
+        <a href="../regex-tester/">Regex</a>
+        <a href="../jwt-decoder/">JWT</a>
+        <a href="../markdown-previewer/">Markdown</a>
+        <a href="https://github.com/btwigley/free-dev-tools" class="github-badge"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+</nav>
+
+<div class="jd-page">
+    <div class="container">
+        <section class="jd-hero">
+            <div class="jd-breadcrumb">
+                <a href="../">Free Resources</a> <span>/</span> JWT Decoder
+            </div>
+            <h1>JWT <span>Decoder</span></h1>
+            <p>Decode and inspect JSON Web Tokens instantly. View header, payload, and signature with expiration status. Everything runs in your browser.</p>
+            <div class="jd-badges">
+                <span class="jd-badge"><i class="fas fa-lock"></i> 100% Private</span>
+                <span class="jd-badge"><i class="fas fa-bolt"></i> Instant</span>
+                <span class="jd-badge"><i class="fas fa-infinity"></i> No Limits</span>
+            </div>
+        </section>
+
+        <!-- Input -->
+        <div class="jd-input-section">
+            <div class="jd-input-label">
+                <span>Paste JWT Token</span>
+                <button class="jd-btn-clear" onclick="jdClear()"><i class="fas fa-times" style="margin-right: 4px;"></i>Clear</button>
+            </div>
+            <textarea class="jd-textarea" id="jd-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" spellcheck="false"></textarea>
+        </div>
+
+        <!-- Error -->
+        <div class="jd-error" id="jd-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="jd-error-msg"></span>
+        </div>
+
+        <!-- Expiration Status -->
+        <div class="jd-status jd-hidden" id="jd-status"></div>
+
+        <!-- Decoded Sections -->
+        <div class="jd-decoded jd-hidden" id="jd-decoded">
+            <div class="jd-section">
+                <div class="jd-section-header jd-section-header-blue">
+                    <i class="fas fa-cog"></i> Header
+                </div>
+                <div class="jd-section-body" id="jd-header"></div>
+            </div>
+            <div class="jd-section">
+                <div class="jd-section-header jd-section-header-purple">
+                    <i class="fas fa-database"></i> Payload
+                </div>
+                <div class="jd-section-body" id="jd-payload"></div>
+            </div>
+            <div class="jd-section">
+                <div class="jd-section-header jd-section-header-teal">
+                    <i class="fas fa-shield-alt"></i> Signature
+                </div>
+                <div class="jd-section-body" id="jd-signature"></div>
+            </div>
+        </div>
+
+        <!-- Claims -->
+        <div class="jd-claims jd-hidden" id="jd-claims">
+            <div class="jd-claims-header">Payload Claims</div>
+            <div id="jd-claims-body"></div>
+        </div>
+
+        <!-- How It Works -->
+        <section class="jd-how">
+            <h2>How It Works</h2>
+            <div class="jd-how-grid">
+                <div class="jd-how-step">
+                    <div class="jd-how-icon"><i class="fas fa-paste"></i></div>
+                    <h3>Paste Your Token</h3>
+                    <p>Paste any JWT token into the input field. The tool automatically detects the three-part structure (header.payload.signature).</p>
+                </div>
+                <div class="jd-how-step">
+                    <div class="jd-how-icon"><i class="fas fa-unlock-alt"></i></div>
+                    <h3>Instant Decode</h3>
+                    <p>The header and payload are Base64-decoded and displayed as formatted JSON with syntax highlighting and color-coded sections.</p>
+                </div>
+                <div class="jd-how-step">
+                    <div class="jd-how-icon"><i class="fas fa-clock"></i></div>
+                    <h3>Check Expiration</h3>
+                    <p>Timestamp claims (exp, iat, nbf) are automatically converted to human-readable dates, and expiration status is shown at a glance.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="jd-faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="jd-faq-item">
+                <button class="jd-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What is a JWT?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="jd-faq-a"><div class="jd-faq-a-inner">
+                    A JSON Web Token (JWT) is a compact, URL-safe token format used for authentication and information exchange between parties. It consists of three Base64-encoded parts separated by dots: a header (algorithm and type), a payload (claims/data), and a cryptographic signature.
+                </div></div>
+            </div>
+
+            <div class="jd-faq-item">
+                <button class="jd-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    Is my token safe here?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="jd-faq-a"><div class="jd-faq-a-inner">
+                    Yes. All decoding happens entirely in your browser. Your token is never transmitted to any server or stored anywhere. However, remember that JWTs are not encrypted -- anyone with the token can read the payload. This tool only decodes; it does not verify signatures.
+                </div></div>
+            </div>
+
+            <div class="jd-faq-item">
+                <button class="jd-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    Does this tool verify the signature?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="jd-faq-a"><div class="jd-faq-a-inner">
+                    No. Signature verification requires the secret key or public key used to sign the token, which this tool intentionally does not ask for. This is a decoder and inspector, not a validator. For signature verification, use your application's JWT library.
+                </div></div>
+            </div>
+
+            <div class="jd-faq-item">
+                <button class="jd-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What do the standard claims mean?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="jd-faq-a"><div class="jd-faq-a-inner">
+                    <strong>iss</strong> (issuer) identifies who created the token. <strong>sub</strong> (subject) identifies the user. <strong>aud</strong> (audience) identifies the intended recipient. <strong>exp</strong> (expiration) is when the token becomes invalid. <strong>iat</strong> (issued at) is when the token was created. <strong>nbf</strong> (not before) is the earliest time the token is valid.
+                </div></div>
+            </div>
+        </section>
+
+        <div class="jd-page-bottom"></div>
+    </div>
+</div>
+
+
+
+
+<footer class="site-footer">
+    <p>Built by <a href="https://wigleystudios.com" target="_blank">Wigley Studios</a> &mdash; Free, open-source, runs entirely in your browser.</p>
+</footer>
+
+<script src="jwt-decoder.js"></script>
+</body>
+</html>

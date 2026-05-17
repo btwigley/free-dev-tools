@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Formatter & Validator | Free Dev Tools</title>
+    <meta name="description" content="Format, validate, and diff-compare JSON instantly in your browser.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
+    <link rel="stylesheet" href="../shared/styles.css">
+
+    <style>
+        .jf-page {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        /* Hero */
+        .jf-hero {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+
+        .jf-breadcrumb {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        .jf-breadcrumb a {
+            color: var(--teal);
+            text-decoration: none;
+        }
+
+        .jf-breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .jf-hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .jf-hero h1 span {
+            background: linear-gradient(135deg, var(--teal), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .jf-hero p {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .jf-badges {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .jf-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            border: 1px solid rgba(32, 198, 183, 0.2);
+        }
+
+        /* Mode tabs */
+        .jf-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0 1.5rem;
+        }
+
+        .jf-tab {
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .jf-tab:hover {
+            border-color: rgba(32, 198, 183, 0.4);
+            color: var(--text);
+        }
+
+        .jf-tab.active {
+            background: var(--teal);
+            color: white;
+            border-color: var(--teal);
+        }
+
+        /* Action bar */
+        .jf-actions {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .jf-btn {
+            padding: 0.55rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            background: var(--surface-1);
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .jf-btn:hover {
+            border-color: rgba(32, 198, 183, 0.4);
+            color: var(--teal);
+            transform: translateY(-1px);
+        }
+
+        .jf-btn-primary {
+            background: linear-gradient(135deg, var(--teal), #159e90);
+            color: white;
+            border-color: var(--teal);
+            box-shadow: 0 2px 8px rgba(32, 198, 183, 0.25);
+            font-size: 0.9rem;
+            padding: 0.6rem 1.4rem;
+        }
+
+        .jf-btn-primary:hover {
+            background: linear-gradient(135deg, #18b1a5, #129286);
+            color: white;
+            box-shadow: 0 4px 16px rgba(32, 198, 183, 0.35);
+        }
+
+        /* Editor layout */
+        .jf-editor {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .jf-pane {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .jf-pane-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .jf-pane-label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .jf-pane-info {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .jf-textarea {
+            width: 100%;
+            min-height: 400px;
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 1rem;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.25s ease;
+            tab-size: 2;
+        }
+
+        .jf-textarea:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        .jf-output-wrap {
+            position: relative;
+            flex: 1;
+        }
+
+        .jf-output {
+            width: 100%;
+            min-height: 400px;
+            background: rgba(32, 198, 183, 0.03);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 1rem;
+            overflow: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Syntax highlighting */
+        .jf-key { color: #7dd3fc; }
+        .jf-string { color: #86efac; }
+        .jf-number { color: #fbbf24; }
+        .jf-boolean { color: #c4b5fd; }
+        .jf-null { color: #94a3b8; font-style: italic; }
+        .jf-bracket { color: var(--text-dim); }
+        .jf-colon { color: var(--text-dim); }
+        .jf-comma { color: var(--text-dim); }
+
+        /* Error panel */
+        .jf-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            color: #fca5a5;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .jf-error.visible {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .jf-error i {
+            color: #ef4444;
+            margin-top: 0.15rem;
+            flex-shrink: 0;
+        }
+
+        .jf-error-text {
+            flex: 1;
+        }
+
+        .jf-error-title {
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #fca5a5;
+        }
+
+        .jf-error-detail {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #f87171;
+        }
+
+        /* Success panel */
+        .jf-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 10px;
+            padding: 0.85rem 1.25rem;
+            color: #86efac;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .jf-success.visible {
+            display: flex;
+        }
+
+        .jf-success i {
+            color: #22c55e;
+            flex-shrink: 0;
+        }
+
+        /* Diff mode */
+        .jf-diff-section {
+            display: none;
+        }
+
+        .jf-diff-section.active {
+            display: block;
+        }
+
+        .jf-single-section {
+            display: none;
+        }
+
+        .jf-single-section.active {
+            display: block;
+        }
+
+        .jf-diff-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .jf-diff-output {
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 1rem;
+            overflow: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            min-height: 300px;
+            max-height: 600px;
+        }
+
+        .jf-diff-line {
+            display: block;
+            padding: 0 0.5rem;
+            border-radius: 3px;
+        }
+
+        .jf-diff-add {
+            background: rgba(34, 197, 94, 0.12);
+            color: #86efac;
+        }
+
+        .jf-diff-remove {
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+            text-decoration: line-through;
+            text-decoration-color: rgba(252, 165, 165, 0.4);
+        }
+
+        .jf-diff-same {
+            color: var(--text-dim);
+        }
+
+        .jf-diff-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .jf-diff-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .jf-diff-stat-add { color: #86efac; }
+        .jf-diff-stat-remove { color: #fca5a5; }
+        .jf-diff-stat-same { color: var(--text-dim); }
+
+        /* How It Works */
+        .jf-how {
+            margin-top: 5rem;
+            padding: 3rem 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .jf-how h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2.5rem;
+        }
+
+        .jf-how-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .jf-how-step {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .jf-how-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(32, 198, 183, 0.1);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin: 0 auto 1rem;
+        }
+
+        .jf-how-step h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .jf-how-step p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* FAQ */
+        .jf-faq {
+            margin-top: 3rem;
+            padding-bottom: 2rem;
+        }
+
+        .jf-faq h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2rem;
+        }
+
+        .jf-faq-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .jf-faq-item:hover {
+            border-color: rgba(32, 198, 183, 0.3);
+        }
+
+        .jf-faq-q {
+            width: 100%;
+            padding: 1.1rem 1.25rem;
+            background: var(--surface-1);
+            border: none;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .jf-faq-q:hover {
+            background: var(--surface-2);
+        }
+
+        .jf-faq-q i {
+            color: var(--teal);
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .jf-faq-item.open .jf-faq-q i {
+            transform: rotate(180deg);
+        }
+
+        .jf-faq-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .jf-faq-a-inner {
+            padding: 1rem 1.25rem 1.25rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+
+        .jf-faq-item.open .jf-faq-a {
+            max-height: 300px;
+        }
+
+        /* Bottom spacing */
+        .jf-page-bottom {
+            padding-bottom: 6rem;
+        }
+
+        @media (max-width: 768px) {
+            .jf-editor,
+            .jf-diff-inputs {
+                grid-template-columns: 1fr;
+            }
+
+            .jf-textarea,
+            .jf-output {
+                min-height: 250px;
+            }
+
+            .jf-actions {
+                gap: 0.4rem;
+            }
+
+            .jf-btn {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .jf-how-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="site-nav">
+    <a href="../" class="nav-brand"><i class="fas fa-tools"></i> Free Dev Tools</a>
+    <div class="nav-links">
+        <a href="../css-js-minifier/">Minifier</a>
+        <a href="../json-formatter/">JSON</a>
+        <a href="../image-optimizer/">Images</a>
+        <a href="../regex-tester/">Regex</a>
+        <a href="../jwt-decoder/">JWT</a>
+        <a href="../markdown-previewer/">Markdown</a>
+        <a href="https://github.com/btwigley/free-dev-tools" class="github-badge"><i class="fab fa-github"></i> GitHub</a>
+    </div>
+</nav>
+
+<div class="jf-page">
+    <div class="container">
+        <!-- Hero -->
+        <section class="jf-hero">
+            <div class="jf-breadcrumb">
+                <a href="../">Free Resources</a> <span>/</span> JSON Formatter
+            </div>
+            <h1>JSON <span>Formatter</span> & Validator</h1>
+            <p>Format, validate, minify, and compare JSON instantly. Everything runs in your browser -- nothing is uploaded to any server.</p>
+            <div class="jf-badges">
+                <span class="jf-badge"><i class="fas fa-lock"></i> 100% Private</span>
+                <span class="jf-badge"><i class="fas fa-bolt"></i> Instant</span>
+                <span class="jf-badge"><i class="fas fa-infinity"></i> No Limits</span>
+            </div>
+        </section>
+
+        <!-- Mode Tabs -->
+        <div class="jf-tabs">
+            <button class="jf-tab active" data-mode="single" onclick="jfSwitchMode('single')">
+                <i class="fas fa-code"></i> Format / Validate
+            </button>
+            <button class="jf-tab" data-mode="diff" onclick="jfSwitchMode('diff')" title="Compare two JSON objects side by side and see line-by-line differences">
+                <i class="fas fa-columns"></i> Diff Compare
+            </button>
+        </div>
+
+        <!-- Single Mode -->
+        <div class="jf-single-section active" id="jf-single-section">
+            <!-- Actions -->
+            <div class="jf-actions">
+                <button class="jf-btn jf-btn-primary" onclick="jfFormat()">
+                    <i class="fas fa-indent"></i> Format
+                </button>
+                <button class="jf-btn" onclick="jfMinify()">
+                    <i class="fas fa-compress-alt"></i> Minify
+                </button>
+                <button class="jf-btn" onclick="jfValidate()">
+                    <i class="fas fa-check-circle"></i> Validate
+                </button>
+                <button class="jf-btn" onclick="jfCopyOutput()">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="jf-btn" onclick="jfDownloadOutput()">
+                    <i class="fas fa-download"></i> Download
+                </button>
+                <button class="jf-btn" onclick="jfClearAll()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+
+            <!-- Error / Success -->
+            <div class="jf-error" id="jf-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="jf-error-text">
+                    <div class="jf-error-title" id="jf-error-title">Invalid JSON</div>
+                    <div class="jf-error-detail" id="jf-error-detail"></div>
+                </div>
+            </div>
+            <div class="jf-success" id="jf-success">
+                <i class="fas fa-check-circle"></i>
+                <span id="jf-success-text">Valid JSON</span>
+            </div>
+
+            <!-- Editor -->
+            <div class="jf-editor">
+                <div class="jf-pane">
+                    <div class="jf-pane-header">
+                        <span class="jf-pane-label">Input</span>
+                        <span class="jf-pane-info" id="jf-input-info"></span>
+                    </div>
+                    <textarea class="jf-textarea" id="jf-input" placeholder='Paste your JSON here...
+
+Example:
+{"name": "John", "age": 30, "active": true}' spellcheck="false"></textarea>
+                </div>
+                <div class="jf-pane">
+                    <div class="jf-pane-header">
+                        <span class="jf-pane-label">Output</span>
+                        <span class="jf-pane-info" id="jf-output-info"></span>
+                    </div>
+                    <div class="jf-output-wrap">
+                        <div class="jf-output" id="jf-output"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diff Mode -->
+        <div class="jf-diff-section" id="jf-diff-section">
+            <div class="jf-actions">
+                <button class="jf-btn jf-btn-primary" onclick="jfRunDiff()">
+                    <i class="fas fa-exchange-alt"></i> Compare
+                </button>
+                <button class="jf-btn" onclick="jfSwapDiff()">
+                    <i class="fas fa-arrows-alt-h"></i> Swap
+                </button>
+                <button class="jf-btn" onclick="jfClearDiff()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+
+            <div class="jf-error" id="jf-diff-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="jf-error-text">
+                    <div class="jf-error-title" id="jf-diff-error-title">Error</div>
+                    <div class="jf-error-detail" id="jf-diff-error-detail"></div>
+                </div>
+            </div>
+
+            <div class="jf-diff-inputs">
+                <div class="jf-pane">
+                    <div class="jf-pane-header">
+                        <span class="jf-pane-label">Left (Original)</span>
+                    </div>
+                    <textarea class="jf-textarea" id="jf-diff-left" placeholder="Paste first JSON here..." spellcheck="false"></textarea>
+                </div>
+                <div class="jf-pane">
+                    <div class="jf-pane-header">
+                        <span class="jf-pane-label">Right (Modified)</span>
+                    </div>
+                    <textarea class="jf-textarea" id="jf-diff-right" placeholder="Paste second JSON here..." spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <div id="jf-diff-result" style="display: none;">
+                <div class="jf-diff-header">
+                    <span class="jf-pane-label">Diff Result</span>
+                    <div class="jf-diff-stats" id="jf-diff-stats"></div>
+                </div>
+                <div class="jf-diff-output" id="jf-diff-output"></div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <section class="jf-how">
+            <h2>How It Works</h2>
+            <div class="jf-how-grid">
+                <div class="jf-how-step">
+                    <div class="jf-how-icon"><i class="fas fa-paste"></i></div>
+                    <h3>Paste Your JSON</h3>
+                    <p>Paste raw JSON into the input panel, or switch to Diff Compare mode to compare two JSON objects side by side.</p>
+                </div>
+                <div class="jf-how-step">
+                    <div class="jf-how-icon"><i class="fas fa-cogs"></i></div>
+                    <h3>Format, Minify, or Validate</h3>
+                    <p>Click Format for pretty-printed output with syntax highlighting, Minify to compress, or Validate to check for errors.</p>
+                </div>
+                <div class="jf-how-step">
+                    <div class="jf-how-icon"><i class="fas fa-download"></i></div>
+                    <h3>Copy or Download</h3>
+                    <p>Copy the result to your clipboard or download it as a .json file. Everything happens locally in your browser.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="jf-faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="jf-faq-item">
+                <button class="jf-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What is JSON and why does formatting matter?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="jf-faq-a"><div class="jf-faq-a-inner">
+                    JSON (JavaScript Object Notation) is a lightweight data format used by virtually every web API and modern application. Formatted JSON uses indentation and line breaks to make nested structures readable, which is essential for debugging API responses, editing config files, and reviewing data.
+                </div></div>
+            </div>
+
+            <div class="jf-faq-item">
+                <button class="jf-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    Is my data safe? Does anything get uploaded?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="jf-faq-a"><div class="jf-faq-a-inner">
+                    Your data never leaves your device. All formatting, validation, and diff operations run entirely in your browser using JavaScript. No data is sent to any server, stored, or logged. This makes the tool safe for sensitive API keys, tokens, and private data.
+                </div></div>
+            </div>
+
+            <div class="jf-faq-item">
+                <button class="jf-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What's the difference between Format and Minify?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="jf-faq-a"><div class="jf-faq-a-inner">
+                    Format (pretty-print) adds indentation and line breaks to make JSON human-readable. Minify does the opposite -- it strips all whitespace to produce the smallest possible output. Minified JSON is ideal for APIs and storage where file size matters.
+                </div></div>
+            </div>
+
+            <div class="jf-faq-item">
+                <button class="jf-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    What does the Diff Compare mode do?
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="jf-faq-a"><div class="jf-faq-a-inner">
+                    Diff Compare lets you paste two JSON objects and see a line-by-line comparison. Added lines are highlighted in green, removed lines in red, and unchanged lines remain dimmed. It's useful for comparing API responses, spotting config changes, and reviewing data migrations.
+                </div></div>
+            </div>
+        </section>
+
+        <div class="jf-page-bottom"></div>
+    </div>
+</div>
+
+
+
+
+<footer class="site-footer">
+    <p>Built by <a href="https://wigleystudios.com" target="_blank">Wigley Studios</a> &mdash; Free, open-source, runs entirely in your browser.</p>
+</footer>
+
+<script src="json-formatter.js"></script>
+</body>
+</html>
