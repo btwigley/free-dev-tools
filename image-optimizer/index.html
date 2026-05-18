@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
     <link rel="stylesheet" href="../shared/styles.css">
     <!-- Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
 
     <style>
         .io-page {
@@ -705,6 +705,14 @@
                     <input type="range" class="io-slider" id="io-quality" min="1" max="100" value="80">
                     <span class="io-slider-value" id="io-quality-value">80%</span>
                 </div>
+            </div>
+            <div class="io-setting">
+                <span class="io-setting-label">Max Width</span>
+                <input type="number" class="io-select" id="io-max-width" placeholder="auto" min="1" style="width:80px">
+            </div>
+            <div class="io-setting">
+                <span class="io-setting-label">Max Height</span>
+                <input type="number" class="io-select" id="io-max-height" placeholder="auto" min="1" style="width:80px">
             </div>
         </div>
 

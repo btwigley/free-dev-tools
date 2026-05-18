@@ -11,8 +11,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
     <link rel="stylesheet" href="../shared/styles.css">
     <!-- Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.1/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.1/marked.min.js" integrity="sha384-3zf4Pen4fXU90jGg3cxmo7BF4dq8HMtF2s07c/Hhd1Fh+Encm6ApPvNm8vrMJbWu" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js" integrity="sha384-vdScihEZCfbPnBQf+lc7LgXUdJVYyhC3yWHUW5C5P5GpHRqVnaM6HJELJxT6IqwM" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css" integrity="sha384-wH75j6z1lH97ZOpMOInqhgKzFkAInZPPSPlZpYKYTOqsaizPvhQZmAtLcPKXpLyH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/index.min.js" integrity="sha384-17LNI7moUdMemaFhkG5bTWfsbVTcXduEioUSRng5/fRo+rN0gakvhXUOhOB590LK" crossorigin="anonymous"></script>
 
     <style>
         .mp-page {
@@ -587,6 +589,7 @@
             <div class="mp-toolbar-right">
                 <button class="mp-action-btn" onclick="mpCopyHtml()"><i class="fas fa-copy"></i> Copy HTML</button>
                 <button class="mp-action-btn" onclick="mpDownload()"><i class="fas fa-download"></i> Download .md</button>
+                <button class="mp-action-btn" onclick="mpExportHtml()"><i class="fas fa-file-code"></i> Export HTML</button>
             </div>
         </div>
 

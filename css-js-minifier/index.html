@@ -11,10 +11,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha384-EXatlQyrOJgDaM9/a74ArMzy7/2bTMSrZj8ID1IPeVmc3GncfCugefCFWSLj8JL/" crossorigin="anonymous">
     <link rel="stylesheet" href="../shared/styles.css">
     <!-- Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/csso@5.0.5/dist/csso.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/source-map@0.7.4/dist/source-map.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/terser@5.37.0/dist/bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/csso@5.0.5/dist/csso.min.js" integrity="sha384-wKMAQj16LGidleyRsyWS4DNZH5mXZcCVFAwkQEjPTBbCwI+0vOt7ehvgUHLwmaXf" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/terser@5.37.0/dist/bundle.min.js" integrity="sha384-/BsnfgiJuK2u26YKCVqz3eyyB5KRJg4npsu9xcJgHxXAcOAjzwRViH8ViaodP8Gi" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
 
     <style>
         .mn-page {
@@ -642,6 +641,14 @@
             <button class="mn-tab" data-mode="paste" onclick="switchMode('paste')">
                 <i class="fas fa-paste"></i> Paste Code
             </button>
+        </div>
+
+        <!-- Options -->
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;padding:0.85rem 1.25rem;background:var(--surface-1);border:1px solid var(--line);border-radius:10px;margin-bottom:1.25rem;font-size:0.8rem;align-items:center;">
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-compress" checked> Compress</label>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-mangle" checked> Mangle</label>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-comments"> Keep Comments</label>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-restructure" checked> Restructure CSS</label>
         </div>
 
         <!-- File Upload Mode -->

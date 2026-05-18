@@ -595,6 +595,9 @@
                 <button class="jf-btn" onclick="jfValidate()">
                     <i class="fas fa-check-circle"></i> Validate
                 </button>
+                <button class="jf-btn" onclick="jfRepair()">
+                    <i class="fas fa-wrench"></i> Repair
+                </button>
                 <button class="jf-btn" onclick="jfCopyOutput()">
                     <i class="fas fa-copy"></i> Copy
                 </button>
@@ -604,6 +607,11 @@
                 <button class="jf-btn" onclick="jfClearAll()">
                     <i class="fas fa-times"></i> Clear
                 </button>
+                <select class="jf-btn" id="jf-indent" style="padding:0.4rem 0.6rem;font-size:0.78rem;cursor:pointer;">
+                    <option value="2">2 spaces</option>
+                    <option value="4">4 spaces</option>
+                    <option value="tab">Tab</option>
+                </select>
             </div>
 
             <!-- Error / Success -->
@@ -639,6 +647,7 @@ Example:
                     <div class="jf-output-wrap">
                         <div class="jf-output" id="jf-output"></div>
                     </div>
+                    <div class="jf-tree-output" id="jf-tree-output" style="padding:0.75rem 1rem;font-size:0.8rem;max-height:400px;overflow:auto;display:none;"></div>
                 </div>
             </div>
         </div>

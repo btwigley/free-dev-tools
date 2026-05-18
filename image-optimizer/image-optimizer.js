@@ -1,29 +1,19 @@
-/**
- * Image Optimizer & Converter - Client-Side Tool
- * Wigley Studios Free Resources
- *
- * Uses Canvas API for image conversion and compression.
- * JSZip for batch download. Everything runs in the browser.
- */
-
 (function () {
     'use strict';
 
-    // ── State ───────────────────────────────────────────────────────────────────
     var optimizedImages = [];
 
-    // ── DOM refs ────────────────────────────────────────────────────────────────
-    var dropzone    = document.getElementById('io-dropzone');
-    var fileInput   = document.getElementById('io-file-input');
+    var dropzone     = document.getElementById('io-dropzone');
+    var fileInput    = document.getElementById('io-file-input');
     var formatSelect = document.getElementById('io-format');
     var qualitySlider = document.getElementById('io-quality');
     var qualityValue = document.getElementById('io-quality-value');
+    var maxWidthInput = document.getElementById('io-max-width');
+    var maxHeightInput = document.getElementById('io-max-height');
     var processingEl = document.getElementById('io-processing');
-    var errorEl     = document.getElementById('io-error');
-    var resultsEl   = document.getElementById('io-results');
-    var gridEl      = document.getElementById('io-grid');
-
-    // ── Helpers ──────────────────────────────────────────────────────────────────
+    var errorEl      = document.getElementById('io-error');
+    var resultsEl    = document.getElementById('io-results');
+    var gridEl       = document.getElementById('io-grid');
 
     function formatBytes(bytes) {
         if (bytes === 0) return '0 B';
@@ -42,7 +32,8 @@
         switch (mimeType) {
             case 'image/webp': return '.webp';
             case 'image/jpeg': return '.jpg';
-            case 'image/png': return '.png';
+            case 'image/png':  return '.png';
+            case 'image/avif': return '.avif';
             default: return '.webp';
         }
     }
@@ -51,7 +42,8 @@
         switch (mimeType) {
             case 'image/webp': return 'WebP';
             case 'image/jpeg': return 'JPEG';
-            case 'image/png': return 'PNG';
+            case 'image/png':  return 'PNG';
+            case 'image/avif': return 'AVIF';
             default: return 'WebP';
         }
     }
@@ -78,13 +70,36 @@
         errorEl.classList.remove('visible');
     }
 
-    // ── Quality slider ──────────────────────────────────────────────────────────
-
     qualitySlider.addEventListener('input', function () {
         qualityValue.textContent = qualitySlider.value + '%';
     });
 
-    // ── Image Processing ────────────────────────────────────────────────────────
+    // AVIF feature detection: add option if supported
+    (function detectAvif() {
+        var canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1;
+        canvas.toBlob(function (blob) {
+            if (blob && blob.type === 'image/avif') {
+                var opt = document.createElement('option');
+                opt.value = 'image/avif';
+                opt.textContent = 'AVIF';
+                formatSelect.appendChild(opt);
+            }
+        }, 'image/avif', 0.5);
+    })();
+
+    function getResizeConstraints() {
+        var mw = maxWidthInput ? parseInt(maxWidthInput.value, 10) : 0;
+        var mh = maxHeightInput ? parseInt(maxHeightInput.value, 10) : 0;
+        return { maxWidth: mw > 0 ? mw : 0, maxHeight: mh > 0 ? mh : 0 };
+    }
+
+    function computeResizedDimensions(origW, origH, maxW, maxH) {
+        var w = origW, h = origH;
+        if (maxW > 0 && w > maxW) { h = Math.round(h * (maxW / w)); w = maxW; }
+        if (maxH > 0 && h > maxH) { w = Math.round(w * (maxH / h)); h = maxH; }
+        return { width: w, height: h };
+    }
 
     function processImage(file, outputFormat, quality) {
         return new Promise(function (resolve) {
@@ -92,55 +107,36 @@
             reader.onload = function (e) {
                 var img = new Image();
                 img.onload = function () {
-                    var canvas = document.createElement('canvas');
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
+                    var resize = getResizeConstraints();
+                    var dims = computeResizedDimensions(img.naturalWidth, img.naturalHeight, resize.maxWidth, resize.maxHeight);
 
+                    var canvas = document.createElement('canvas');
+                    canvas.width = dims.width;
+                    canvas.height = dims.height;
                     var ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
+                    ctx.drawImage(img, 0, 0, dims.width, dims.height);
 
                     var qualityParam = quality / 100;
                     canvas.toBlob(function (blob) {
                         if (!blob) {
-                            resolve({
-                                success: false,
-                                name: file.name,
-                                error: 'Conversion failed -- format may not be supported by this browser.'
-                            });
+                            resolve({ success: false, name: file.name, error: 'Conversion failed -- format may not be supported by this browser.' });
                             return;
                         }
-
                         var previewUrl = URL.createObjectURL(blob);
                         resolve({
-                            success: true,
-                            name: file.name,
+                            success: true, name: file.name,
                             outputName: replaceExtension(file.name, getOutputExtension(outputFormat)),
-                            originalSize: file.size,
-                            optimizedSize: blob.size,
-                            width: img.naturalWidth,
-                            height: img.naturalHeight,
-                            blob: blob,
-                            previewUrl: previewUrl,
-                            format: outputFormat
+                            originalSize: file.size, optimizedSize: blob.size,
+                            width: dims.width, height: dims.height,
+                            originalWidth: img.naturalWidth, originalHeight: img.naturalHeight,
+                            blob: blob, previewUrl: previewUrl, format: outputFormat
                         });
                     }, outputFormat, qualityParam);
                 };
-                img.onerror = function () {
-                    resolve({
-                        success: false,
-                        name: file.name,
-                        error: 'Could not load image.'
-                    });
-                };
+                img.onerror = function () { resolve({ success: false, name: file.name, error: 'Could not load image.' }); };
                 img.src = e.target.result;
             };
-            reader.onerror = function () {
-                resolve({
-                    success: false,
-                    name: file.name,
-                    error: 'Could not read file.'
-                });
-            };
+            reader.onerror = function () { resolve({ success: false, name: file.name, error: 'Could not read file.' }); };
             reader.readAsDataURL(file);
         });
     }
@@ -148,9 +144,7 @@
     async function processFiles(fileList) {
         var imageFiles = [];
         for (var i = 0; i < fileList.length; i++) {
-            if (fileList[i].type.startsWith('image/')) {
-                imageFiles.push(fileList[i]);
-            }
+            if (fileList[i].type.startsWith('image/')) imageFiles.push(fileList[i]);
         }
 
         if (imageFiles.length === 0) {
@@ -161,6 +155,10 @@
         hideError();
         processingEl.classList.add('visible');
         resultsEl.classList.remove('visible');
+
+        // Revoke stale blob URLs before reprocessing
+        optimizedImages.forEach(function (img) { if (img.previewUrl) URL.revokeObjectURL(img.previewUrl); });
+        optimizedImages = [];
 
         var outputFormat = formatSelect.value;
         var quality = parseInt(qualitySlider.value, 10);
@@ -174,20 +172,13 @@
         renderResults();
     }
 
-    // ── Results Rendering ───────────────────────────────────────────────────────
-
     function renderResults() {
-        if (optimizedImages.length === 0) {
-            resultsEl.classList.remove('visible');
-            return;
-        }
+        if (optimizedImages.length === 0) { resultsEl.classList.remove('visible'); return; }
 
         resultsEl.classList.add('visible');
         gridEl.innerHTML = '';
 
-        var totalOriginal = 0;
-        var totalOptimized = 0;
-        var successCount = 0;
+        var totalOriginal = 0, totalOptimized = 0, successCount = 0;
 
         optimizedImages.forEach(function (img, idx) {
             var card = document.createElement('div');
@@ -213,6 +204,9 @@
             var isLarger = img.optimizedSize > img.originalSize;
             var savingsClass = isLarger ? 'io-card-savings negative' : 'io-card-savings';
             var savingsText = isLarger ? '+' + Math.abs(parseFloat(saved)).toFixed(1) + '%' : '-' + saved + '%';
+            var resized = (img.originalWidth && img.originalWidth !== img.width) || (img.originalHeight && img.originalHeight !== img.height);
+            var dimsHtml = img.width + ' x ' + img.height + 'px';
+            if (resized) dimsHtml += ' <span style="opacity:.6">(from ' + img.originalWidth + ' x ' + img.originalHeight + ')</span>';
 
             card.innerHTML =
                 '<div class="io-card-preview">' +
@@ -221,7 +215,7 @@
                 '</div>' +
                 '<div class="io-card-body">' +
                     '<div class="io-card-name" title="' + escapeHtml(img.outputName) + '">' + escapeHtml(img.outputName) + '</div>' +
-                    '<div class="io-card-dimensions">' + img.width + ' x ' + img.height + 'px</div>' +
+                    '<div class="io-card-dimensions">' + dimsHtml + '</div>' +
                     '<div class="io-card-stats">' +
                         '<div class="io-card-sizes">' +
                             '<span class="io-card-original">' + formatBytes(img.originalSize) + '</span>' +
@@ -244,23 +238,16 @@
         document.getElementById('io-stat-original').textContent = formatBytes(totalOriginal);
         document.getElementById('io-stat-optimized').textContent = formatBytes(totalOptimized);
         document.getElementById('io-stat-saved').textContent = totalOriginal > 0 ? pct(totalOriginal, totalOptimized) + '%' : '0%';
-
         document.getElementById('io-download-all').style.display = successCount > 1 ? 'inline-flex' : 'none';
     }
-
-    // ── Downloads ───────────────────────────────────────────────────────────────
 
     function ioDownloadSingle(idx) {
         var img = optimizedImages[idx];
         if (!img || !img.success) return;
-
         var url = URL.createObjectURL(img.blob);
         var a = document.createElement('a');
-        a.href = url;
-        a.download = img.outputName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        a.href = url; a.download = img.outputName;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
 
@@ -270,14 +257,9 @@
     });
 
     window.ioDownloadAll = async function () {
-        if (typeof JSZip === 'undefined') {
-            showError('JSZip library not loaded. Please refresh the page.');
-            return;
-        }
-
+        if (typeof JSZip === 'undefined') { showError('JSZip library not loaded. Please refresh the page.'); return; }
         var zip = new JSZip();
         var nameCount = {};
-
         optimizedImages.forEach(function (img) {
             if (!img.success) return;
             var name = img.outputName;
@@ -287,59 +269,34 @@
                 var base = dot === -1 ? name : name.substring(0, dot);
                 var ext = dot === -1 ? '' : name.substring(dot);
                 name = base + ' (' + nameCount[name] + ')' + ext;
-            } else {
-                nameCount[name] = 1;
-            }
+            } else { nameCount[name] = 1; }
             zip.file(name, img.blob);
         });
-
         var blob = await zip.generateAsync({ type: 'blob' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
-        a.href = url;
-        a.download = 'optimized-images.zip';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        a.href = url; a.download = 'optimized-images.zip';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
 
     window.ioClearResults = function () {
-        optimizedImages.forEach(function (img) {
-            if (img.previewUrl) {
-                URL.revokeObjectURL(img.previewUrl);
-            }
-        });
+        optimizedImages.forEach(function (img) { if (img.previewUrl) URL.revokeObjectURL(img.previewUrl); });
         optimizedImages = [];
         gridEl.innerHTML = '';
         resultsEl.classList.remove('visible');
         hideError();
     };
 
-    // ── Event Listeners ─────────────────────────────────────────────────────────
-
     fileInput.addEventListener('change', function (e) {
-        if (e.target.files.length > 0) {
-            processFiles(e.target.files);
-        }
+        if (e.target.files.length > 0) processFiles(e.target.files);
         e.target.value = '';
     });
 
-    dropzone.addEventListener('dragover', function (e) {
-        e.preventDefault();
-        dropzone.classList.add('dragover');
-    });
-
-    dropzone.addEventListener('dragleave', function () {
-        dropzone.classList.remove('dragover');
-    });
-
+    dropzone.addEventListener('dragover', function (e) { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', function () { dropzone.classList.remove('dragover'); });
     dropzone.addEventListener('drop', function (e) {
-        e.preventDefault();
-        dropzone.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) {
-            processFiles(e.dataTransfer.files);
-        }
+        e.preventDefault(); dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) processFiles(e.dataTransfer.files);
     });
-
 })();

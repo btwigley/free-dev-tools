@@ -354,6 +354,86 @@
             font-size: 0.9rem;
         }
 
+        .rt-named-groups {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+            margin-top: 0.25rem;
+        }
+
+        .rt-named-tag {
+            font-size: 0.7rem;
+            padding: 0.12rem 0.4rem;
+            border-radius: 4px;
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+        }
+
+        .rt-named-tag em {
+            font-style: normal;
+            color: #86efac;
+        }
+
+        .rt-truncation-notice {
+            padding: 0.85rem 1.25rem;
+            font-size: 0.8rem;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-top: 1px solid var(--line);
+        }
+
+        .rt-replace {
+            margin-top: 1.5rem;
+        }
+
+        .rt-replace-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .rt-replace-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            transition: border-color 0.25s ease;
+        }
+
+        .rt-replace-input:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        .rt-replace-output-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin: 0.75rem 0 0.35rem;
+        }
+
+        .rt-replace-output {
+            width: 100%;
+            min-height: 60px;
+            padding: 0.75rem 1rem;
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.8;
+        }
+
         /* Cheat Sheet */
         .rt-cheatsheet {
             margin-top: 1.5rem;
@@ -664,6 +744,14 @@
             <div class="rt-results-body" id="rt-results-body"></div>
         </div>
 
+        <!-- Replace / Substitution -->
+        <div class="rt-replace" id="rt-replace-section">
+            <div class="rt-replace-label">Substitution</div>
+            <input type="text" class="rt-replace-input" id="rt-replace-pattern" placeholder="Replace pattern (e.g. $1, $&, replacement text)..." spellcheck="false" autocomplete="off">
+            <div class="rt-replace-output-label">Result</div>
+            <div class="rt-replace-output" id="rt-replace-output"></div>
+        </div>
+
         <!-- Cheat Sheet -->
         <div class="rt-cheatsheet" id="rt-cheatsheet">
             <button class="rt-cheatsheet-toggle" onclick="document.getElementById('rt-cheatsheet').classList.toggle('open')">
@@ -695,6 +783,14 @@
                         <div class="rt-cheat-row"><span class="rt-cheat-pattern">\b</span><span class="rt-cheat-desc">Word boundary</span></div>
                         <div class="rt-cheat-row"><span class="rt-cheat-pattern">(abc)</span><span class="rt-cheat-desc">Capture group</span></div>
                         <div class="rt-cheat-row"><span class="rt-cheat-pattern">(?:abc)</span><span class="rt-cheat-desc">Non-capture group</span></div>
+                    </div>
+                    <div class="rt-cheat-group">
+                        <h4>Flags</h4>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">g</span><span class="rt-cheat-desc">Global (all matches)</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">i</span><span class="rt-cheat-desc">Case insensitive</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">m</span><span class="rt-cheat-desc">^ $ match line ends</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">s</span><span class="rt-cheat-desc">Dot matches newlines</span></div>
+                        <div class="rt-cheat-row"><span class="rt-cheat-pattern">u</span><span class="rt-cheat-desc">Full Unicode</span></div>
                     </div>
                     <div class="rt-cheat-group">
                         <h4>Common Patterns</h4>

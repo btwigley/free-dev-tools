@@ -450,6 +450,98 @@
             display: none !important;
         }
 
+        .jd-alg-warning {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            align-items: flex-start;
+            gap: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .jd-alg-warning.visible { display: flex; }
+        .jd-alg-warning i { color: #ef4444; font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+        .jd-alg-warning strong { color: #fca5a5; }
+        .jd-alg-warning code { background: rgba(0,0,0,0.2); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem; }
+
+        .jd-status-nbf-warn, .jd-status-iat-warn {
+            background: rgba(251, 191, 36, 0.12);
+            color: #fde68a;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .jd-verify {
+            background: var(--surface-1);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .jd-verify-header {
+            padding: 0.85rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text);
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .jd-verify-body { padding: 1.25rem; }
+
+        .jd-verify-key-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 0.4rem;
+        }
+
+        .jd-verify-textarea {
+            width: 100%;
+            min-height: 80px;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            resize: vertical;
+        }
+
+        .jd-verify-textarea:focus { outline: none; border-color: var(--teal); }
+
+        .jd-verify-btn {
+            margin-top: 0.75rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            background: var(--teal);
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .jd-verify-btn:hover { background: #18b1a5; transform: translateY(-1px); }
+
+        .jd-verify-result { margin-top: 0.75rem; font-size: 0.85rem; }
+        .jd-verify-valid { color: #86efac; font-weight: 600; }
+        .jd-verify-valid i { margin-right: 0.3rem; }
+        .jd-verify-invalid { color: #fca5a5; font-weight: 600; }
+        .jd-verify-invalid i { margin-right: 0.3rem; }
+        .jd-verify-error { color: #fde68a; font-weight: 500; }
+        .jd-verify-error i { margin-right: 0.3rem; }
+        .jd-verify-alg { font-family: 'JetBrains Mono', monospace; color: var(--teal); font-size: 0.8rem; margin-left: auto; }
+
         @media (max-width: 768px) {
             .jd-decoded {
                 grid-template-columns: 1fr;
@@ -515,6 +607,12 @@
             <span id="jd-error-msg"></span>
         </div>
 
+        <!-- alg:none Security Warning -->
+        <div class="jd-alg-warning" id="jd-alg-warning">
+            <i class="fas fa-shield-alt"></i>
+            <div><strong>Security Warning:</strong> This token uses <code>alg:none</code> &mdash; it is unsigned and accepted without verification. This is a known attack vector (<a href="https://nvd.nist.gov/vuln/detail/CVE-2015-9235" target="_blank" style="color:#fca5a5">CVE-2015-9235</a>). Do not trust this token for authentication.</div>
+        </div>
+
         <!-- Expiration Status -->
         <div class="jd-status jd-hidden" id="jd-status"></div>
 
@@ -537,6 +635,20 @@
                     <i class="fas fa-shield-alt"></i> Signature
                 </div>
                 <div class="jd-section-body" id="jd-signature"></div>
+            </div>
+        </div>
+
+        <!-- Signature Verification -->
+        <div class="jd-verify jd-hidden" id="jd-verify-section">
+            <div class="jd-verify-header">
+                <i class="fas fa-key"></i> Verify Signature
+                <span class="jd-verify-alg" id="jd-verify-alg"></span>
+            </div>
+            <div class="jd-verify-body">
+                <div class="jd-verify-key-label" id="jd-verify-key-label">Secret</div>
+                <textarea class="jd-verify-textarea" id="jd-verify-key" placeholder="Enter the HMAC secret..." spellcheck="false"></textarea>
+                <button class="jd-verify-btn" onclick="jdVerify()"><i class="fas fa-check-circle" style="margin-right:0.3rem"></i>Verify</button>
+                <div class="jd-verify-result" id="jd-verify-result"></div>
             </div>
         </div>
 
