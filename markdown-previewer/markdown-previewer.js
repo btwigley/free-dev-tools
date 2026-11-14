@@ -28,14 +28,75 @@
 
     var AUTOSAVE_KEY = 'mp_autosave';
 
+    // Remote resources (images, media, CSS url()) in pasted Markdown would be
+    // fetched as soon as they render, sending their URL (query string
+    // included) to whoever hosts them. They stay inert until the reader clicks
+    // "Load remote images"; the same rule applies to copied and exported HTML.
+    var allowRemote = false;
+    var blockedCount = 0;
+    function isRemote(url) {
+        var u = String(url || '').trim().toLowerCase();
+        return !!u && u.indexOf('data:') !== 0 && u.indexOf('blob:') !== 0 && u.charAt(0) !== '#';
+    }
+    DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+        if (allowRemote || !node.getAttribute) return;
+        ['src', 'poster', 'background'].forEach(function (attr) {
+            var v = node.getAttribute(attr);
+            if (v !== null && isRemote(v)) {
+                node.setAttribute('data-blocked-' + attr, v);
+                node.removeAttribute(attr);
+                blockedCount++;
+            }
+        });
+        if (node.hasAttribute('srcset')) { node.removeAttribute('srcset'); blockedCount++; }
+        var tag = node.nodeName.toLowerCase();
+        if (tag === 'image' || tag === 'use' || tag === 'feimage') {
+            ['href', 'xlink:href'].forEach(function (attr) {
+                if (node.hasAttribute(attr) && isRemote(node.getAttribute(attr))) {
+                    node.removeAttribute(attr);
+                    blockedCount++;
+                }
+            });
+        }
+        var style = node.getAttribute('style');
+        if (style && /url\s*\(/i.test(style)) { node.removeAttribute('style'); blockedCount++; }
+    });
+
+    var remoteNotice = document.createElement('div');
+    remoteNotice.setAttribute('role', 'status');
+    remoteNotice.hidden = true;
+    remoteNotice.style.cssText = 'display:flex;gap:.75rem;align-items:center;justify-content:space-between;' +
+        'padding:.5rem .75rem;margin-bottom:.5rem;border:1px solid rgba(255,255,255,.15);border-radius:8px;font-size:.85rem;';
+    var remoteNoticeText = document.createElement('span');
+    var remoteNoticeBtn = document.createElement('button');
+    remoteNoticeBtn.type = 'button';
+    remoteNoticeBtn.textContent = 'Load remote images';
+    remoteNoticeBtn.style.cssText = 'cursor:pointer;white-space:nowrap;background:transparent;color:inherit;' +
+        'border:1px solid currentColor;border-radius:6px;padding:.25rem .6rem;font:inherit;';
+    remoteNoticeBtn.addEventListener('click', function () { allowRemote = true; render(); });
+    remoteNotice.appendChild(remoteNoticeText);
+    remoteNotice.appendChild(remoteNoticeBtn);
+    preview.parentNode.insertBefore(remoteNotice, preview);
+
+    function sanitize(html) {
+        blockedCount = 0;
+        return DOMPurify.sanitize(html);
+    }
+
     function render() {
         var raw = input.value;
         if (!raw.trim()) {
             preview.innerHTML = '<p style="color: var(--text-dim); opacity: 0.5;">Preview will appear here...</p>';
+            remoteNotice.hidden = true;
+            remoteNotice.style.display = 'none';
             return;
         }
         var html = marked.parse(raw);
-        preview.innerHTML = DOMPurify.sanitize(html);
+        preview.innerHTML = sanitize(html);
+        remoteNotice.hidden = blockedCount === 0;
+        remoteNotice.style.display = blockedCount === 0 ? 'none' : 'flex';
+        remoteNoticeText.textContent = blockedCount + ' remote resource' + (blockedCount === 1 ? '' : 's') +
+            ' not loaded. Loading contacts the server that hosts ' + (blockedCount === 1 ? 'it' : 'them') + '.';
         try { localStorage.setItem(AUTOSAVE_KEY, raw); } catch (_) {}
     }
 
@@ -87,7 +148,7 @@
     window.mpCopyHtml = function () {
         var raw = input.value;
         if (!raw.trim()) return;
-        var html = DOMPurify.sanitize(marked.parse(raw));
+        var html = sanitize(marked.parse(raw));
         navigator.clipboard.writeText(html).then(function () {
             showToast('HTML copied to clipboard');
         }).catch(function () {
@@ -109,7 +170,7 @@
     window.mpExportHtml = function () {
         var raw = input.value;
         if (!raw.trim()) return;
-        var body = DOMPurify.sanitize(marked.parse(raw));
+        var body = sanitize(marked.parse(raw));
         var hljsCss = _hljs ? '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">' : '';
         var doc = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Exported Markdown</title>\n' +
             '<style>body{font-family:system-ui,-apple-system,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;line-height:1.7;color:#e0e0e0;background:#1a1a2e}pre{background:#16213e;padding:1rem;border-radius:8px;overflow-x:auto}code{font-family:"JetBrains Mono",monospace;font-size:0.9em}table{border-collapse:collapse;width:100%}th,td{border:1px solid #334;padding:0.5rem 0.75rem;text-align:left}img{max-width:100%}a{color:#20c6b7}blockquote{border-left:3px solid #20c6b7;margin-left:0;padding-left:1rem;color:#a0a0b0}</style>\n' +

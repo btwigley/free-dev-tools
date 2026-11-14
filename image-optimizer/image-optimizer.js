@@ -54,10 +54,10 @@
         return base + newExt;
     }
 
+    // Encodes for both element text and quoted attributes.
     function escapeHtml(str) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(str));
-        return div.innerHTML;
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     function showError(msg) {
@@ -184,14 +184,20 @@
             var card = document.createElement('div');
             card.className = 'io-card';
 
+            // The markup below is static; every file-derived value (a file name
+            // can hold quotes and markup) is set afterwards as text or a property.
             if (!img.success) {
                 card.innerHTML =
                     '<div class="io-card-preview" style="background: rgba(239, 68, 68, 0.1); color: #fca5a5; font-size: 0.85rem; padding: 1rem;">' +
-                        '<div style="text-align: center;"><i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>' + escapeHtml(img.error) + '</div>' +
+                        '<div style="text-align: center;"><i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i><span class="io-card-error"></span></div>' +
                     '</div>' +
                     '<div class="io-card-body">' +
-                        '<div class="io-card-name" title="' + escapeHtml(img.name) + '">' + escapeHtml(img.name) + '</div>' +
+                        '<div class="io-card-name"></div>' +
                     '</div>';
+                card.querySelector('.io-card-error').textContent = String(img.error);
+                var failedName = card.querySelector('.io-card-name');
+                failedName.textContent = img.name;
+                failedName.title = img.name;
                 gridEl.appendChild(card);
                 return;
             }
@@ -210,11 +216,11 @@
 
             card.innerHTML =
                 '<div class="io-card-preview">' +
-                    '<img src="' + img.previewUrl + '" alt="' + escapeHtml(img.outputName) + '">' +
+                    '<img>' +
                     '<span class="io-card-format-badge">' + getFormatLabel(img.format) + '</span>' +
                 '</div>' +
                 '<div class="io-card-body">' +
-                    '<div class="io-card-name" title="' + escapeHtml(img.outputName) + '">' + escapeHtml(img.outputName) + '</div>' +
+                    '<div class="io-card-name"></div>' +
                     '<div class="io-card-dimensions">' + dimsHtml + '</div>' +
                     '<div class="io-card-stats">' +
                         '<div class="io-card-sizes">' +
@@ -230,6 +236,13 @@
                         '</button>' +
                     '</div>' +
                 '</div>';
+
+            var previewImg = card.querySelector('.io-card-preview img');
+            previewImg.src = img.previewUrl;
+            previewImg.alt = img.outputName;
+            var cardName = card.querySelector('.io-card-name');
+            cardName.textContent = img.outputName;
+            cardName.title = img.outputName;
 
             gridEl.appendChild(card);
         });

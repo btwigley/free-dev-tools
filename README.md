@@ -15,7 +15,7 @@ Six browser-based developer utilities. No sign-up, no server, no tracking. Every
 
 ## Features
 
-- **100% Client-Side** — Nothing is uploaded. All processing happens in your browser.
+- **100% Client-Side** — Nothing you paste or drop is uploaded; all processing happens in your browser. The pages load their libraries and fonts from public CDNs. In the Markdown Previewer, remote images in your document stay unloaded until you click **Load remote images**, because loading one contacts the server that hosts it.
 - **No Sign-Up** — No accounts, no cookies, no tracking.
 - **Open Source** — MIT licensed. Fork it, self-host it, modify it.
 - **Mobile Friendly** — Responsive design works on all devices.

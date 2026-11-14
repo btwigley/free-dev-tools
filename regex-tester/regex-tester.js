@@ -174,14 +174,44 @@ postMessage({k:'r',ms:ms,tr:gl&&ms.length>=d.m})}`;
         resultsBody.innerHTML = rows;
     }
 
+    // Replacement re-runs the user's pattern over the whole text (past the
+    // match cap), so it gets the same Worker and time limit as matching and
+    // never runs on the page's own thread.
+    let _rUrl = null;
+    function rUrl() {
+        if (_rUrl) return _rUrl;
+        const src = `self.onmessage=function(e){var d=e.data;
+try{postMessage({k:'r',v:d.t.replace(new RegExp(d.p,d.f),d.r)})}catch(err){postMessage({k:'e',v:err.message})}}`;
+        _rUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+        return _rUrl;
+    }
+
+    let replaceW = null;
     function doReplace() {
         if (!replacePatternEl || !replaceOutputEl) return;
+        if (replaceW) { replaceW.terminate(); replaceW = null; }
         if (!safePattern || !safeText) { replaceOutputEl.textContent = ''; return; }
-        try {
-            replaceOutputEl.textContent = safeText.replace(
-                new RegExp(safePattern, safeFlags), replacePatternEl.value
-            );
-        } catch (_) { replaceOutputEl.textContent = ''; }
+        const w = new Worker(rUrl());
+        replaceW = w;
+        let expired = false;
+        const timer = setTimeout(() => {
+            expired = true; w.terminate();
+            if (replaceW === w) replaceW = null;
+            replaceOutputEl.textContent = 'Replacement took too long \u2014 likely catastrophic backtracking. Simplify the pattern or avoid nested quantifiers.';
+        }, TIMEOUT_MS);
+        w.onmessage = ev => {
+            clearTimeout(timer);
+            if (expired || replaceW !== w) return;
+            replaceW = null;
+            replaceOutputEl.textContent = ev.data.k === 'r' ? ev.data.v : '';
+        };
+        w.onerror = () => {
+            clearTimeout(timer);
+            if (expired || replaceW !== w) return;
+            replaceW = null;
+            replaceOutputEl.textContent = '';
+        };
+        w.postMessage({ p: safePattern, f: safeFlags, t: safeText, r: replacePatternEl.value });
     }
 
     patternInput.addEventListener('input', runMatch);

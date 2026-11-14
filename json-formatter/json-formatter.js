@@ -129,16 +129,79 @@
     }
 
     // --- Repair mode ---
+    // Repairs comments, trailing commas, unquoted keys and single-quoted
+    // strings in one pass that knows where strings begin and end, so text
+    // inside a string (a URL's "//", a "/*", a ",}") is never changed.
     function repairJson(text) {
-        var s = text;
-        s = s.replace(/\/\/[^\n]*/g, '');
-        s = s.replace(/\/\*[\s\S]*?\*\//g, '');
-        s = s.replace(/,(\s*[}\]])/g, '$1');
-        s = s.replace(/([{,]\s*)([a-zA-Z_$][\w$]*)\s*:/g, '$1"$2":');
-        s = s.replace(/:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g, function (_, inner) {
-            return ': "' + inner.replace(/"/g, '\\"') + '"';
-        });
-        return s;
+        var n = text.length, i = 0, out = '', lastSig = '';
+        var identRe = /[A-Za-z_$][\w$]*/y;
+
+        function skipSpaceAndComments(j) {
+            while (j < n) {
+                var c = text.charAt(j);
+                if (c === ' ' || c === '\t' || c === '\n' || c === '\r') { j++; continue; }
+                if (c === '/' && text.charAt(j + 1) === '/') {
+                    while (j < n && text.charAt(j) !== '\n') j++;
+                    continue;
+                }
+                if (c === '/' && text.charAt(j + 1) === '*') {
+                    var end = text.indexOf('*/', j + 2);
+                    j = end === -1 ? n : end + 2;
+                    continue;
+                }
+                break;
+            }
+            return j;
+        }
+
+        while (i < n) {
+            var c = text.charAt(i);
+            if (c === '"') {
+                var j = i + 1;
+                while (j < n && text.charAt(j) !== '"') { if (text.charAt(j) === '\\') j++; j++; }
+                out += text.slice(i, j + 1);
+                i = j + 1; lastSig = '"';
+                continue;
+            }
+            if (c === "'") {
+                var k = i + 1, inner = '';
+                while (k < n && text.charAt(k) !== "'") {
+                    var ch = text.charAt(k);
+                    if (ch === '\\' && k + 1 < n) {
+                        var nx = text.charAt(k + 1);
+                        inner += nx === "'" ? "'" : '\\' + nx;
+                        k += 2;
+                        continue;
+                    }
+                    inner += ch === '"' ? '\\"' : ch;
+                    k++;
+                }
+                out += '"' + inner + '"';
+                i = k + 1; lastSig = '"';
+                continue;
+            }
+            if (c === '/' && (text.charAt(i + 1) === '/' || text.charAt(i + 1) === '*')) {
+                i = skipSpaceAndComments(i);
+                continue;
+            }
+            if (c === ',') {
+                var next = text.charAt(skipSpaceAndComments(i + 1));
+                if (next === '}' || next === ']') { i++; continue; }
+            }
+            if ((lastSig === '{' || lastSig === ',') && /[A-Za-z_$]/.test(c)) {
+                identRe.lastIndex = i;
+                var m = identRe.exec(text);
+                if (m && text.charAt(skipSpaceAndComments(i + m[0].length)) === ':') {
+                    out += '"' + m[0] + '"';
+                    i += m[0].length; lastSig = '"';
+                    continue;
+                }
+            }
+            out += c;
+            if (!/\s/.test(c)) lastSig = c;
+            i++;
+        }
+        return out;
     }
 
     // --- Core Operations ---
