@@ -58,8 +58,28 @@
                 }
             });
         }
-        var style = node.getAttribute('style');
-        if (style && /url\s*\(/i.test(style)) { node.removeAttribute('style'); blockedCount++; }
+        CSS_VALUE_ATTRS.forEach(function (attr) {
+            var v = node.getAttribute(attr);
+            if (v !== null && /[(\\]/.test(v) && !/^\s*url\(\s*['"]?#[^)]*\)\s*$/i.test(v)) {
+                node.removeAttribute(attr);
+                blockedCount++;
+            }
+        });
+    });
+    // Inline CSS can request a URL in many spellings (CSS escapes, image-set()
+    // with a bare string, @import), so the document's CSS is dropped whole
+    // while remote loading is off, rather than filtered by text.
+    var CSS_VALUE_ATTRS = ['fill', 'stroke', 'filter', 'mask', 'clip-path', 'marker-start',
+        'marker-mid', 'marker-end', 'cursor'];
+    DOMPurify.addHook('uponSanitizeAttribute', function (node, data) {
+        if (!allowRemote && data.attrName === 'style') {
+            data.keepAttr = false;
+            if (/[(\\@]/.test(data.attrValue || '')) blockedCount++;
+        }
+    });
+    DOMPurify.addHook('uponSanitizeElement', function (node, data) {
+        // Removed by FORBID_TAGS in sanitize(); counted here.
+        if (!allowRemote && data.tagName === 'style') blockedCount++;
     });
 
     var remoteNotice = document.createElement('div');
@@ -80,7 +100,7 @@
 
     function sanitize(html) {
         blockedCount = 0;
-        return DOMPurify.sanitize(html);
+        return DOMPurify.sanitize(html, allowRemote ? {} : { FORBID_TAGS: ['style'] });
     }
 
     function render() {

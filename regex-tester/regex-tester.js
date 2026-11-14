@@ -186,29 +186,32 @@ try{postMessage({k:'r',v:d.t.replace(new RegExp(d.p,d.f),d.r)})}catch(err){postM
         return _rUrl;
     }
 
-    let replaceW = null;
+    let replaceW = null, replaceTimer = null;
     function doReplace() {
         if (!replacePatternEl || !replaceOutputEl) return;
         if (replaceW) { replaceW.terminate(); replaceW = null; }
+        if (replaceTimer) { clearTimeout(replaceTimer); replaceTimer = null; }
         if (!safePattern || !safeText) { replaceOutputEl.textContent = ''; return; }
         const w = new Worker(rUrl());
         replaceW = w;
         let expired = false;
         const timer = setTimeout(() => {
+            if (replaceW !== w) return;   // a newer replacement owns the output
             expired = true; w.terminate();
-            if (replaceW === w) replaceW = null;
+            replaceW = null; replaceTimer = null;
             replaceOutputEl.textContent = 'Replacement took too long \u2014 likely catastrophic backtracking. Simplify the pattern or avoid nested quantifiers.';
         }, TIMEOUT_MS);
+        replaceTimer = timer;
         w.onmessage = ev => {
             clearTimeout(timer);
             if (expired || replaceW !== w) return;
-            replaceW = null;
+            replaceW = null; replaceTimer = null;
             replaceOutputEl.textContent = ev.data.k === 'r' ? ev.data.v : '';
         };
         w.onerror = () => {
             clearTimeout(timer);
             if (expired || replaceW !== w) return;
-            replaceW = null;
+            replaceW = null; replaceTimer = null;
             replaceOutputEl.textContent = '';
         };
         w.postMessage({ p: safePattern, f: safeFlags, t: safeText, r: replacePatternEl.value });
