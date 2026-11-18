@@ -220,6 +220,8 @@
             font-size: 0.9rem;
         }
 
+        .io-dropzone:focus-within { outline: 2px solid var(--teal); outline-offset: 2px; }
+
         .io-dropzone input[type="file"] {
             position: absolute;
             inset: 0;
@@ -693,7 +695,7 @@
         <div class="io-settings">
             <div class="io-setting">
                 <span class="io-setting-label">Output Format</span>
-                <select class="io-select" id="io-format">
+                <select class="io-select" id="io-format" aria-label="Output format">
                     <option value="image/webp">WebP</option>
                     <option value="image/jpeg">JPEG</option>
                     <option value="image/png">PNG</option>
@@ -702,23 +704,23 @@
             <div class="io-setting">
                 <span class="io-setting-label">Quality</span>
                 <div class="io-slider-wrap">
-                    <input type="range" class="io-slider" id="io-quality" min="1" max="100" value="80">
+                    <input type="range" class="io-slider" id="io-quality" aria-label="Quality" min="1" max="100" value="80">
                     <span class="io-slider-value" id="io-quality-value">80%</span>
                 </div>
             </div>
             <div class="io-setting">
                 <span class="io-setting-label">Max Width</span>
-                <input type="number" class="io-select" id="io-max-width" placeholder="auto" min="1" style="width:80px">
+                <input type="number" class="io-select" id="io-max-width" aria-label="Max width in pixels" placeholder="auto" min="1" style="width:80px">
             </div>
             <div class="io-setting">
                 <span class="io-setting-label">Max Height</span>
-                <input type="number" class="io-select" id="io-max-height" placeholder="auto" min="1" style="width:80px">
+                <input type="number" class="io-select" id="io-max-height" aria-label="Max height in pixels" placeholder="auto" min="1" style="width:80px">
             </div>
         </div>
 
         <!-- Drop zone -->
         <div class="io-dropzone" id="io-dropzone">
-            <input type="file" id="io-file-input" multiple accept="image/*">
+            <input type="file" id="io-file-input" multiple accept="image/*" aria-label="Choose images">
             <div class="io-dropzone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
             <h3>Drag & drop images here</h3>
             <p>or click to browse. Accepts <strong>PNG</strong>, <strong>JPG</strong>, <strong>GIF</strong>, <strong>BMP</strong>, <strong>SVG</strong>, and <strong>WebP</strong>. Multiple files supported.</p>
@@ -731,7 +733,7 @@
         </div>
 
         <!-- Error -->
-        <div class="io-error" id="io-error"></div>
+        <div class="io-error" id="io-error" role="alert"></div>
 
         <!-- Results -->
         <div class="io-results" id="io-results">
@@ -745,7 +747,7 @@
             <div class="io-grid" id="io-grid"></div>
 
             <div class="io-summary" id="io-summary">
-                <div class="io-summary-stats">
+                <div class="io-summary-stats" role="status">
                     <div class="io-stat">
                         <div class="io-stat-value" id="io-stat-files">0</div>
                         <div class="io-stat-label">Images</div>
@@ -796,7 +798,7 @@
             <h2>Frequently Asked Questions</h2>
 
             <div class="io-faq-item">
-                <button class="io-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="io-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What is WebP and why should I use it?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -806,7 +808,7 @@
             </div>
 
             <div class="io-faq-item">
-                <button class="io-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="io-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Are my images uploaded to a server?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -816,7 +818,7 @@
             </div>
 
             <div class="io-faq-item">
-                <button class="io-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="io-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     How much compression is safe without losing quality?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -826,7 +828,7 @@
             </div>
 
             <div class="io-faq-item">
-                <button class="io-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="io-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What image formats are supported?
                     <i class="fas fa-chevron-down"></i>
                 </button>

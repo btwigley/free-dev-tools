@@ -510,6 +510,10 @@
             transition: color 0.2s ease;
         }
 
+        button.rt-cheat-pattern { background: none; border: 0; padding: 0; font-size: inherit; text-align: left; }
+        button.rt-cheat-pattern:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 3px; }
+        span.rt-cheat-pattern { cursor: default; }
+
         .rt-cheat-pattern:hover {
             color: var(--gold);
         }
@@ -701,7 +705,7 @@
         <!-- Pattern Input -->
         <div class="rt-pattern-bar">
             <div class="rt-pattern-slash">/</div>
-            <input type="text" class="rt-pattern-input" id="rt-pattern" placeholder="Enter regex pattern..." spellcheck="false" autocomplete="off">
+            <input type="text" class="rt-pattern-input" id="rt-pattern" aria-label="Regular expression pattern" placeholder="Enter regex pattern..." spellcheck="false" autocomplete="off">
             <div class="rt-pattern-slash">/</div>
             <div class="rt-flags">
                 <button class="rt-flag active" data-flag="g" title="Global">g</button>
@@ -726,7 +730,7 @@
             </div>
             <div class="rt-test-highlight">
                 <div class="rt-test-render" id="rt-render"></div>
-                <textarea class="rt-test-input" id="rt-input" placeholder="Type or paste your test string here..." spellcheck="false"></textarea>
+                <textarea class="rt-test-input" id="rt-input" aria-label="Test string" placeholder="Type or paste your test string here..." spellcheck="false"></textarea>
             </div>
         </div>
 
@@ -746,15 +750,15 @@
 
         <!-- Replace / Substitution -->
         <div class="rt-replace" id="rt-replace-section">
-            <div class="rt-replace-label">Substitution</div>
+            <label class="rt-replace-label" for="rt-replace-pattern">Substitution</label>
             <input type="text" class="rt-replace-input" id="rt-replace-pattern" placeholder="Replace pattern (e.g. $1, $&, replacement text)..." spellcheck="false" autocomplete="off">
             <div class="rt-replace-output-label">Result</div>
-            <div class="rt-replace-output" id="rt-replace-output"></div>
+            <div class="rt-replace-output" id="rt-replace-output" role="status"></div>
         </div>
 
         <!-- Cheat Sheet -->
         <div class="rt-cheatsheet" id="rt-cheatsheet">
-            <button class="rt-cheatsheet-toggle" onclick="document.getElementById('rt-cheatsheet').classList.toggle('open')">
+            <button class="rt-cheatsheet-toggle" aria-expanded="false" onclick="this.setAttribute('aria-expanded', document.getElementById('rt-cheatsheet').classList.toggle('open'))">
                 <span><i class="fas fa-book-open" style="margin-right: 0.5rem;"></i>Quick Reference</span>
                 <i class="fas fa-chevron-down"></i>
             </button>
@@ -762,10 +766,10 @@
                 <div class="rt-cheatsheet-grid">
                     <div class="rt-cheat-group">
                         <h4>Character Classes</h4>
-                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">.</span><span class="rt-cheat-desc">Any character</span></div>
-                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\d</span><span class="rt-cheat-desc">Digit [0-9]</span></div>
-                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\w</span><span class="rt-cheat-desc">Word [a-zA-Z0-9_]</span></div>
-                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\s</span><span class="rt-cheat-desc">Whitespace</span></div>
+                        <div class="rt-cheat-row"><button type="button" class="rt-cheat-pattern" title="Use this pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">.</button><span class="rt-cheat-desc">Any character</span></div>
+                        <div class="rt-cheat-row"><button type="button" class="rt-cheat-pattern" title="Use this pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\d</button><span class="rt-cheat-desc">Digit [0-9]</span></div>
+                        <div class="rt-cheat-row"><button type="button" class="rt-cheat-pattern" title="Use this pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\w</button><span class="rt-cheat-desc">Word [a-zA-Z0-9_]</span></div>
+                        <div class="rt-cheat-row"><button type="button" class="rt-cheat-pattern" title="Use this pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\s</button><span class="rt-cheat-desc">Whitespace</span></div>
                         <div class="rt-cheat-row"><span class="rt-cheat-pattern">\D \W \S</span><span class="rt-cheat-desc">Negated versions</span></div>
                     </div>
                     <div class="rt-cheat-group">
@@ -794,10 +798,10 @@
                     </div>
                     <div class="rt-cheat-group">
                         <h4>Common Patterns</h4>
-                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}</span><span class="rt-cheat-desc">Email</span></div>
-                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">https?://[^\s]+</span><span class="rt-cheat-desc">URL</span></div>
-                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}</span><span class="rt-cheat-desc">IPv4</span></div>
-                        <div class="rt-cheat-row"><span class="rt-cheat-pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})</span><span class="rt-cheat-desc">Hex color</span></div>
+                        <div class="rt-cheat-row"><button type="button" class="rt-cheat-pattern" title="Use this pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}</button><span class="rt-cheat-desc">Email</span></div>
+                        <div class="rt-cheat-row"><button type="button" class="rt-cheat-pattern" title="Use this pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">https?://[^\s]+</button><span class="rt-cheat-desc">URL</span></div>
+                        <div class="rt-cheat-row"><button type="button" class="rt-cheat-pattern" title="Use this pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}</button><span class="rt-cheat-desc">IPv4</span></div>
+                        <div class="rt-cheat-row"><button type="button" class="rt-cheat-pattern" title="Use this pattern" onclick="document.getElementById('rt-pattern').value=this.textContent;document.getElementById('rt-pattern').dispatchEvent(new Event('input'))">#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})</button><span class="rt-cheat-desc">Hex color</span></div>
                     </div>
                 </div>
             </div>
@@ -830,7 +834,7 @@
             <h2>Frequently Asked Questions</h2>
 
             <div class="rt-faq-item">
-                <button class="rt-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="rt-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What regex flavor does this tool use?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -840,7 +844,7 @@
             </div>
 
             <div class="rt-faq-item">
-                <button class="rt-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="rt-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Is my data sent to a server?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -850,7 +854,7 @@
             </div>
 
             <div class="rt-faq-item">
-                <button class="rt-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="rt-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What do the flag buttons mean?
                     <i class="fas fa-chevron-down"></i>
                 </button>

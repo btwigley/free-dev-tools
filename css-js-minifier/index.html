@@ -156,6 +156,8 @@
             font-size: 0.9rem;
         }
 
+        .mn-dropzone:focus-within { outline: 2px solid var(--teal); outline-offset: 2px; }
+
         .mn-dropzone input[type="file"] {
             position: absolute;
             inset: 0;
@@ -635,49 +637,50 @@
 
         <!-- Mode Tabs -->
         <div class="mn-tabs">
-            <button class="mn-tab active" data-mode="file" onclick="switchMode('file')">
+            <button class="mn-tab active" data-mode="file" aria-pressed="true" onclick="switchMode('file')">
                 <i class="fas fa-file-upload"></i> Upload Files
             </button>
-            <button class="mn-tab" data-mode="paste" onclick="switchMode('paste')">
+            <button class="mn-tab" data-mode="paste" aria-pressed="false" onclick="switchMode('paste')">
                 <i class="fas fa-paste"></i> Paste Code
             </button>
         </div>
 
         <!-- Options -->
         <div style="display:flex;gap:1.5rem;flex-wrap:wrap;padding:0.85rem 1.25rem;background:var(--surface-1);border:1px solid var(--line);border-radius:10px;margin-bottom:1.25rem;font-size:0.8rem;align-items:center;">
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-compress" checked> Compress</label>
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-mangle" checked> Mangle</label>
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-comments"> Keep Comments</label>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-compress" checked> Compress (JS)</label>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-mangle" checked> Mangle (JS)</label>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-comments" checked> Keep license comments (/*! */)</label>
             <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;color:var(--text);font-weight:600;"><input type="checkbox" id="mn-opt-restructure" checked> Restructure CSS</label>
         </div>
 
         <!-- File Upload Mode -->
         <div class="mn-file-section active" id="file-section">
             <div class="mn-dropzone" id="dropzone">
-                <input type="file" id="file-input" multiple accept=".css,.js">
+                <input type="file" id="file-input" multiple accept=".css,.js" aria-label="Choose CSS or JS files">
                 <div class="mn-dropzone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
                 <h3>Drag & drop CSS/JS files here</h3>
                 <p>or click to browse. Accepts <strong>.css</strong> and <strong>.js</strong> files. Multiple files supported.</p>
             </div>
+            <div id="file-error" class="mn-error" role="alert"></div>
         </div>
 
         <!-- Paste Code Mode -->
         <div class="mn-paste-section" id="paste-section">
             <div class="mn-paste-type">
-                <button class="mn-paste-type-btn active" data-type="css" onclick="switchPasteType('css')">CSS</button>
-                <button class="mn-paste-type-btn" data-type="js" onclick="switchPasteType('js')">JavaScript</button>
+                <button class="mn-paste-type-btn active" data-type="css" aria-pressed="true" onclick="switchPasteType('css')">CSS</button>
+                <button class="mn-paste-type-btn" data-type="js" aria-pressed="false" onclick="switchPasteType('js')">JavaScript</button>
             </div>
             <div class="mn-paste-row">
                 <div class="mn-paste-col">
                     <label>Input</label>
-                    <textarea class="mn-textarea" id="paste-input" placeholder="Paste your CSS or JavaScript code here..."></textarea>
+                    <textarea class="mn-textarea" id="paste-input" aria-label="Code to minify" placeholder="Paste your CSS or JavaScript code here..."></textarea>
                 </div>
                 <div class="mn-paste-col">
                     <label>Minified Output</label>
-                    <textarea class="mn-textarea output" id="paste-output" readonly placeholder="Minified output will appear here..."></textarea>
+                    <textarea class="mn-textarea output" id="paste-output" readonly aria-label="Minified output" placeholder="Minified output will appear here..."></textarea>
                 </div>
             </div>
-            <div id="paste-error" class="mn-error"></div>
+            <div id="paste-error" class="mn-error" role="alert"></div>
             <div class="mn-paste-actions">
                 <button class="mn-download-btn" onclick="minifyPaste()" style="padding: 0.6rem 1.5rem; font-size: 0.95rem;">
                     <i class="fas fa-compress-alt"></i> Minify
@@ -721,7 +724,7 @@
                 </table>
             </div>
             <div class="mn-summary" id="summary">
-                <div class="mn-summary-stats">
+                <div class="mn-summary-stats" role="status">
                     <div class="mn-stat">
                         <div class="mn-stat-value" id="stat-files">0</div>
                         <div class="mn-stat-label">Files</div>
@@ -772,7 +775,7 @@
             <h2>Frequently Asked Questions</h2>
 
             <div class="mn-faq-item">
-                <button class="mn-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="mn-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What is minification and why does it matter?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -782,7 +785,7 @@
             </div>
 
             <div class="mn-faq-item">
-                <button class="mn-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="mn-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Will minification break my code?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -792,7 +795,7 @@
             </div>
 
             <div class="mn-faq-item">
-                <button class="mn-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="mn-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Is my code uploaded to a server?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -802,7 +805,7 @@
             </div>
 
             <div class="mn-faq-item">
-                <button class="mn-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="mn-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What's the difference between CSS and JavaScript minification?
                     <i class="fas fa-chevron-down"></i>
                 </button>

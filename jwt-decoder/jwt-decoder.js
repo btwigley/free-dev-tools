@@ -33,7 +33,31 @@
     const EC_ALG = { ES256: { hash: 'SHA-256', curve: 'P-256' }, ES384: { hash: 'SHA-384', curve: 'P-384' }, ES512: { hash: 'SHA-512', curve: 'P-521' } };
 
     let lastParts = null;
-    let lastHeader = null;
+    let lastAlg = null;      // the header's alg, only when it is a string
+    let verifySeq = 0;       // bumped by every token or key edit; a check whose number is stale draws nothing
+
+    function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
+    function formatDuration(secs) {
+        const days = Math.floor(secs / 86400), hours = Math.floor((secs % 86400) / 3600), mins = Math.floor((secs % 3600) / 60);
+        if (secs >= 48 * 3600) return days + 'd ' + hours + 'h';
+        return Math.floor(secs / 3600) + 'h ' + mins + 'm';
+    }
+
+    // WebCrypto only answers "DataError" for a key in the wrong format, so the common wrong formats are named first.
+    function keyFormatProblem(keyVal) {
+        if (/^\s*\{/.test(keyVal)) return 'This looks like a JWK (JSON key). Paste the public key as PEM instead (-----BEGIN PUBLIC KEY-----).';
+        if (/-----BEGIN CERTIFICATE-----/.test(keyVal)) return 'This is an X.509 certificate, not a public key. Extract its key with: openssl x509 -in cert.pem -pubkey -noout';
+        if (/-----BEGIN RSA PUBLIC KEY-----/.test(keyVal)) return 'This is a PKCS#1 RSA key. Convert it to the expected SPKI format with: openssl rsa -RSAPublicKey_in -in key.pem -pubout';
+        if (/PRIVATE KEY-----/.test(keyVal)) return 'This is a private key. Verification needs only the public key (-----BEGIN PUBLIC KEY-----); keep the private key to yourself.';
+        if (!/-----BEGIN PUBLIC KEY-----/.test(keyVal)) return 'Expected a PEM public key that starts with -----BEGIN PUBLIC KEY-----.';
+        return null;
+    }
+
+    function invalidateVerify() {
+        verifySeq++;
+        if (verifyResultDiv) verifyResultDiv.innerHTML = '';
+    }
 
     function b64Decode(str) {
         let s = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -58,7 +82,7 @@
     }
 
     function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     function syntaxHighlight(json) {
@@ -99,10 +123,10 @@
         claimsDiv.classList.add('jd-hidden');
         if (algWarningDiv) algWarningDiv.classList.remove('visible');
         if (verifySection) verifySection.classList.add('jd-hidden');
-        if (verifyResultDiv) verifyResultDiv.innerHTML = '';
+        invalidateVerify();
 
         lastParts = null;
-        lastHeader = null;
+        lastAlg = null;
 
         if (!token) return;
 
@@ -126,47 +150,64 @@
             return;
         }
 
+        // Valid JSON is not enough: both parts must be JSON objects, and alg must be a string, or the checks below
+        // would throw inside the debounce timer and leave a half-drawn page with no message.
+        if (!isPlainObject(header)) {
+            errorMsg.textContent = 'The header is valid JSON but not a JSON object (got ' + (header === null ? 'null' : Array.isArray(header) ? 'an array' : typeof header) + '). A JWT header must be an object.';
+            errorDiv.classList.add('visible');
+            return;
+        }
+        if (!isPlainObject(payload)) {
+            errorMsg.textContent = 'The payload is valid JSON but not a JSON object (got ' + (payload === null ? 'null' : Array.isArray(payload) ? 'an array' : typeof payload) + '). JWT claims must be an object.';
+            errorDiv.classList.add('visible');
+            return;
+        }
+
+        const algIsString = typeof header.alg === 'string';
         lastParts = parts;
-        lastHeader = header;
+        lastAlg = algIsString ? header.alg : null;
 
         headerDiv.innerHTML = syntaxHighlight(header);
         payloadDiv.innerHTML = syntaxHighlight(payload);
         signatureDiv.textContent = parts[2];
         decodedDiv.classList.remove('jd-hidden');
 
+        if (header.alg !== undefined && !algIsString) {
+            errorMsg.textContent = 'The header\'s "alg" is ' + JSON.stringify(header.alg) + ', not a string, so the signature cannot be checked.';
+            errorDiv.classList.add('visible');
+        }
+
         // alg:none warning (CVE-2015-9235)
-        const algVal = (header.alg || '').toLowerCase();
+        const algVal = (lastAlg || '').toLowerCase();
         if (algWarningDiv) {
-            if (!header.alg || algVal === 'none') {
+            if (!lastAlg || algVal === 'none') {
                 algWarningDiv.classList.add('visible');
             }
         }
 
-        // Expiration + temporal validation
+        // Expiration + temporal validation. These say whether the token is inside its time window; whether the
+        // signature is genuine is the separate check below.
         const now = Math.floor(Date.now() / 1000);
+        const isTime = v => typeof v === 'number' && isFinite(v);
         let statusHtml = '';
 
-        if (payload.exp) {
+        if (isTime(payload.exp)) {
             if (now < payload.exp) {
-                const remaining = payload.exp - now;
-                const hours = Math.floor(remaining / 3600);
-                const mins = Math.floor((remaining % 3600) / 60);
-                statusHtml += '<span class="jd-status-pill jd-status-valid"><i class="fas fa-check-circle"></i> Valid &mdash; expires in ' + hours + 'h ' + mins + 'm</span>';
+                statusHtml += '<span class="jd-status-pill jd-status-valid"><i class="fas fa-check-circle"></i> Not expired &mdash; expires in ' + formatDuration(payload.exp - now) + '</span>';
             } else {
-                const ago = now - payload.exp;
-                const days = Math.floor(ago / 86400);
-                const hours = Math.floor((ago % 86400) / 3600);
-                statusHtml += '<span class="jd-status-pill jd-status-expired"><i class="fas fa-times-circle"></i> Expired &mdash; ' + (days > 0 ? days + 'd ' : '') + hours + 'h ago</span>';
+                statusHtml += '<span class="jd-status-pill jd-status-expired"><i class="fas fa-times-circle"></i> Expired &mdash; ' + formatDuration(now - payload.exp) + ' ago</span>';
             }
+        } else if (payload.exp !== undefined) {
+            statusHtml += '<span class="jd-status-pill jd-status-expired"><i class="fas fa-times-circle"></i> exp is not a number: ' + escapeHtml(JSON.stringify(payload.exp)) + '</span>';
         } else {
             statusHtml += '<span class="jd-status-pill jd-status-no-exp"><i class="fas fa-info-circle"></i> No expiration claim (exp)</span>';
         }
 
-        if (payload.nbf && typeof payload.nbf === 'number' && now < payload.nbf) {
+        if (isTime(payload.nbf) && now < payload.nbf) {
             statusHtml += '<span class="jd-status-pill jd-status-nbf-warn"><i class="fas fa-clock"></i> Not yet valid (nbf: ' + escapeHtml(formatTimestamp(payload.nbf) || String(payload.nbf)) + ')</span>';
         }
 
-        if (payload.iat && typeof payload.iat === 'number' && payload.iat > now + 60) {
+        if (isTime(payload.iat) && payload.iat > now + 60) {
             statusHtml += '<span class="jd-status-pill jd-status-iat-warn"><i class="fas fa-exclamation-circle"></i> Issued in the future (iat)</span>';
         }
 
@@ -197,11 +238,11 @@
         }
 
         // Signature verification panel
-        if (verifySection && header.alg && algVal !== 'none') {
-            const alg = header.alg.toUpperCase();
+        if (verifySection && lastAlg && algVal !== 'none') {
+            const alg = lastAlg.toUpperCase();
             const isHmac = !!HMAC_ALG[alg];
-            if (verifyAlgLabel) verifyAlgLabel.textContent = header.alg;
-            if (verifyKeyLabel) verifyKeyLabel.textContent = isHmac ? 'Secret' : 'Public Key (PEM)';
+            if (verifyAlgLabel) verifyAlgLabel.textContent = lastAlg;
+            if (verifyKeyLabel) verifyKeyLabel.textContent = isHmac ? 'Secret' : 'Public Key (PEM, -----BEGIN PUBLIC KEY-----)';
             if (verifyKeyInput) verifyKeyInput.placeholder = isHmac
                 ? 'Enter the HMAC secret...'
                 : '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----';
@@ -210,16 +251,33 @@
     }
 
     window.jdVerify = async function () {
-        if (!verifyResultDiv || !verifyKeyInput || !lastParts || !lastHeader) return;
+        if (!verifyResultDiv || !verifyKeyInput || !lastParts || !lastAlg) return;
+        const seq = ++verifySeq;
+        verifyResultDiv.innerHTML = '';
         const keyVal = verifyKeyInput.value.trim();
         if (!keyVal) {
             verifyResultDiv.innerHTML = '<span class="jd-verify-error">Please enter a secret or public key.</span>';
             return;
         }
 
-        const alg = (lastHeader.alg || '').toUpperCase();
-        const data = new TextEncoder().encode(lastParts[0] + '.' + lastParts[1]);
-        const sig = b64ToUint8(lastParts[2]);
+        const alg = lastAlg.toUpperCase();
+        if (!HMAC_ALG[alg] && (RSA_ALG[alg] || PSS_ALG[alg] || EC_ALG[alg])) {
+            const problem = keyFormatProblem(keyVal);
+            if (problem) {
+                verifyResultDiv.innerHTML = '<span class="jd-verify-error"><i class="fas fa-exclamation-triangle"></i> ' + escapeHtml(problem) + '</span>';
+                return;
+            }
+        }
+        // The check below awaits WebCrypto; it draws its result only if no token or key edit happened meanwhile.
+        function show(html) { if (seq === verifySeq) verifyResultDiv.innerHTML = html; }
+        let data, sig;
+        try {
+            data = new TextEncoder().encode(lastParts[0] + '.' + lastParts[1]);
+            sig = b64ToUint8(lastParts[2]);
+        } catch (e) {
+            show('<span class="jd-verify-error"><i class="fas fa-exclamation-triangle"></i> The signature part is not valid base64url.</span>');
+            return;
+        }
 
         try {
             let valid = false;
@@ -251,17 +309,20 @@
                 );
                 valid = await crypto.subtle.verify({ name: 'ECDSA', hash: cfg.hash }, key, sig, data);
             } else {
-                verifyResultDiv.innerHTML = '<span class="jd-verify-error">Unsupported algorithm: ' + escapeHtml(alg) + '</span>';
+                show('<span class="jd-verify-error">Unsupported algorithm: ' + escapeHtml(alg) + '</span>');
                 return;
             }
 
             if (valid) {
-                verifyResultDiv.innerHTML = '<span class="jd-verify-valid"><i class="fas fa-check-circle"></i> Signature is valid</span>';
+                show('<span class="jd-verify-valid"><i class="fas fa-check-circle"></i> Signature is valid</span>');
             } else {
-                verifyResultDiv.innerHTML = '<span class="jd-verify-invalid"><i class="fas fa-times-circle"></i> Signature is invalid</span>';
+                show('<span class="jd-verify-invalid"><i class="fas fa-times-circle"></i> Signature is invalid</span>');
             }
         } catch (e) {
-            verifyResultDiv.innerHTML = '<span class="jd-verify-error"><i class="fas fa-exclamation-triangle"></i> ' + escapeHtml(e.message || 'Verification failed') + '</span>';
+            const msg = e && e.name === 'DataError'
+                ? 'The key could not be read. ' + alg + ' needs a PEM public key that starts with -----BEGIN PUBLIC KEY----- (SPKI).'
+                : (e && e.message) || 'Verification failed';
+            show('<span class="jd-verify-error"><i class="fas fa-exclamation-triangle"></i> ' + escapeHtml(msg) + '</span>');
         }
     };
 
@@ -272,9 +333,11 @@
 
     let debounceTimer;
     input.addEventListener('input', function () {
+        invalidateVerify();
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(decode, 150);
     });
+    if (verifyKeyInput) verifyKeyInput.addEventListener('input', invalidateVerify);
 
     if (input.value.trim()) {
         decode();

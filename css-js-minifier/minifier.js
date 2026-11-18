@@ -11,6 +11,7 @@
     const pasteInput     = document.getElementById('paste-input');
     const pasteOutput    = document.getElementById('paste-output');
     const pasteError     = document.getElementById('paste-error');
+    const fileError      = document.getElementById('file-error') || pasteError;
     const processing     = document.getElementById('processing');
     const results        = document.getElementById('results');
     const resultsBody    = document.getElementById('results-body');
@@ -54,7 +55,9 @@
         try {
             if (typeof csso === 'undefined') throw new Error('csso library not loaded. Please refresh the page.');
             var opts = getOptions();
-            var result = csso.minify(code, { restructure: opts.restructure });
+            // "Keep license comments" applies to both languages: csso keeps /*! ... */ comments, Terser 'some'
+            // keeps /*! ... */, @license and @preserve comments.
+            var result = csso.minify(code, { restructure: opts.restructure, comments: opts.comments ? 'exclamation' : false });
             return { success: true, code: result.css };
         } catch (e) { return { success: false, error: e.message }; }
     }
@@ -88,38 +91,69 @@
             else rejectedNames.push(file.name);
         }
 
+        // Upload-mode messages go to the upload area's own box (the paste box is hidden in that mode), and a
+        // "skipped" warning stays up for the batch it describes.
         if (rejectedNames.length > 0 && validFiles.length === 0) {
-            showError(pasteError, 'No CSS or JS files found. Rejected: ' + rejectedNames.join(', '));
+            showError(fileError, 'No CSS or JS files found. Rejected: ' + rejectedNames.join(', '));
             return;
         }
-        if (rejectedNames.length > 0) {
-            showError(pasteError, 'Skipped non-CSS/JS files: ' + rejectedNames.join(', '));
-        }
+        if (rejectedNames.length > 0) showError(fileError, 'Skipped non-CSS/JS files: ' + rejectedNames.join(', '));
+        else hideError(fileError);
         if (validFiles.length === 0) return;
 
-        hideError(pasteError);
         processing.classList.add('visible');
         results.classList.remove('visible');
 
-        for (const file of validFiles) {
-            const ext = getExtension(file.name);
-            const content = await file.text();
-            const result = await minifyContent(content, ext);
-            if (result.success) {
-                minifiedFiles.push({
-                    name: file.name, type: ext, original: content, minified: result.code,
-                    originalSize: new Blob([content]).size, minifiedSize: new Blob([result.code]).size
-                });
-            } else {
-                minifiedFiles.push({
-                    name: file.name, type: ext, original: content, minified: null,
-                    originalSize: new Blob([content]).size, minifiedSize: 0, error: result.error
-                });
+        try {
+            for (const file of validFiles) {
+                const ext = getExtension(file.name);
+                let content;
+                try {
+                    content = await file.text();
+                } catch (e) {
+                    // One unreadable file (moved, deleted, permission) fails alone; the rest still run.
+                    minifiedFiles.push({
+                        name: file.name, type: ext, original: '', minified: null,
+                        originalSize: file.size || 0, minifiedSize: 0, error: 'Could not read the file' + (e && e.message ? ': ' + e.message : '.')
+                    });
+                    continue;
+                }
+                const result = await minifyContent(content, ext);
+                if (result.success) {
+                    minifiedFiles.push({
+                        name: file.name, outName: uniqueOutName(minName(file.name)), type: ext, original: content, minified: result.code,
+                        originalSize: new Blob([content]).size, minifiedSize: new Blob([result.code]).size
+                    });
+                } else {
+                    minifiedFiles.push({
+                        name: file.name, type: ext, original: content, minified: null,
+                        originalSize: new Blob([content]).size, minifiedSize: 0, error: result.error
+                    });
+                }
             }
+        } finally {
+            processing.classList.remove('visible');
+            renderResults();
         }
+    }
 
-        processing.classList.remove('visible');
-        renderResults();
+    // app.js -> app.min.js; a name that already ends in .min.<ext> keeps a single .min.
+    function minName(filename) {
+        const dot = filename.lastIndexOf('.');
+        if (dot <= 0) return filename + '.min';
+        const base = filename.substring(0, dot), ext = filename.substring(dot);
+        return /\.min$/i.test(base) ? filename : base + '.min' + ext;
+    }
+
+    // Two inputs with one name (from different folders) get "name (2).min.js", so the ZIP keeps both.
+    function uniqueOutName(name) {
+        const taken = new Set(minifiedFiles.map(function (f) { return f.outName; }));
+        if (!taken.has(name)) return name;
+        const dot = name.indexOf('.min.') !== -1 ? name.lastIndexOf('.min.') : name.lastIndexOf('.');
+        const base = dot === -1 ? name : name.substring(0, dot), ext = dot === -1 ? '' : name.substring(dot);
+        let n = 2;
+        while (taken.has(base + ' (' + n + ')' + ext)) n++;
+        return base + ' (' + n + ')' + ext;
     }
 
     function renderResults() {
@@ -143,12 +177,12 @@
                 totalMinified += file.minifiedSize;
                 successCount++;
                 tr.innerHTML =
-                    '<td>' + escapeHtml(file.name) + '</td>' +
+                    '<td>' + escapeHtml(file.name) + '<div style="font-size:0.75rem;opacity:0.65;">saves as ' + escapeHtml(file.outName) + '</div></td>' +
                     '<td><span class="mn-file-type ' + file.type + '">' + file.type + '</span></td>' +
                     '<td>' + formatBytes(file.originalSize) + '</td>' +
                     '<td>' + formatBytes(file.minifiedSize) + '</td>' +
                     '<td><span class="mn-savings">-' + saved + '%</span></td>' +
-                    '<td><button class="mn-download-btn" data-action="mn-download" data-idx="' + idx + '"><i class="fas fa-download"></i></button></td>';
+                    '<td><button class="mn-download-btn" data-action="mn-download" data-idx="' + idx + '" aria-label="Download ' + escapeHtml(file.outName) + '"><i class="fas fa-download"></i></button></td>';
             }
             resultsBody.appendChild(tr);
         });
@@ -161,9 +195,7 @@
     }
 
     function escapeHtml(str) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(str));
-        return div.innerHTML;
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     function triggerDownload(filename, content) {
@@ -178,7 +210,7 @@
     function downloadSingle(idx) {
         var file = minifiedFiles[idx];
         if (!file || file.error) return;
-        triggerDownload(file.name, file.minified);
+        triggerDownload(file.outName, file.minified);
     }
 
     document.addEventListener('click', function (e) {
@@ -189,7 +221,8 @@
     window.downloadAll = async function () {
         if (typeof JSZip === 'undefined') { alert('JSZip library not loaded. Please refresh the page.'); return; }
         var zip = new JSZip();
-        minifiedFiles.forEach(function (file) { if (!file.error && file.minified) zip.file(file.name, file.minified); });
+        // Every successful result goes in under its unique shown name, an empty output included.
+        minifiedFiles.forEach(function (file) { if (!file.error && typeof file.minified === 'string') zip.file(file.outName, file.minified); });
         var blob = await zip.generateAsync({ type: 'blob' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
@@ -202,6 +235,7 @@
         minifiedFiles = [];
         resultsBody.innerHTML = '';
         results.classList.remove('visible');
+        hideError(fileError);
     };
 
     window.minifyPaste = async function () {
@@ -235,14 +269,18 @@
     window.switchPasteType = function (type) {
         currentPasteType = type;
         document.querySelectorAll('.mn-paste-type-btn').forEach(function (btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-type') === type);
+            var on = btn.getAttribute('data-type') === type;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
         pasteInput.placeholder = type === 'css' ? 'Paste your CSS code here...' : 'Paste your JavaScript code here...';
     };
 
     window.switchMode = function (mode) {
         document.querySelectorAll('.mn-tab').forEach(function (tab) {
-            tab.classList.toggle('active', tab.getAttribute('data-mode') === mode);
+            var on = tab.getAttribute('data-mode') === mode;
+            tab.classList.toggle('active', on);
+            tab.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
         if (mode === 'file') { fileSection.classList.add('active'); pasteSection.classList.remove('active'); }
         else { fileSection.classList.remove('active'); pasteSection.classList.add('active'); }

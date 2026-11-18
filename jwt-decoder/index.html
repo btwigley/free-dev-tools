@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JWT Decoder | Free Dev Tools</title>
-    <meta name="description" content="Decode and inspect JSON Web Tokens instantly. No verification, no server, 100% private.">
+    <meta name="description" content="Decode, inspect and verify JSON Web Tokens in your browser. No server, 100% private.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -497,6 +497,7 @@
         .jd-verify-body { padding: 1.25rem; }
 
         .jd-verify-key-label {
+            display: block;
             font-size: 0.8rem;
             font-weight: 600;
             color: var(--text-dim);
@@ -598,7 +599,7 @@
                 <span>Paste JWT Token</span>
                 <button class="jd-btn-clear" onclick="jdClear()"><i class="fas fa-times" style="margin-right: 4px;"></i>Clear</button>
             </div>
-            <textarea class="jd-textarea" id="jd-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" spellcheck="false"></textarea>
+            <textarea class="jd-textarea" id="jd-input" aria-label="JWT token" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" spellcheck="false"></textarea>
         </div>
 
         <!-- Error -->
@@ -645,10 +646,10 @@
                 <span class="jd-verify-alg" id="jd-verify-alg"></span>
             </div>
             <div class="jd-verify-body">
-                <div class="jd-verify-key-label" id="jd-verify-key-label">Secret</div>
+                <label class="jd-verify-key-label" id="jd-verify-key-label" for="jd-verify-key">Secret</label>
                 <textarea class="jd-verify-textarea" id="jd-verify-key" placeholder="Enter the HMAC secret..." spellcheck="false"></textarea>
                 <button class="jd-verify-btn" onclick="jdVerify()"><i class="fas fa-check-circle" style="margin-right:0.3rem"></i>Verify</button>
-                <div class="jd-verify-result" id="jd-verify-result"></div>
+                <div class="jd-verify-result" id="jd-verify-result" role="status"></div>
             </div>
         </div>
 
@@ -685,7 +686,7 @@
             <h2>Frequently Asked Questions</h2>
 
             <div class="jd-faq-item">
-                <button class="jd-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="jd-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What is a JWT?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -695,27 +696,27 @@
             </div>
 
             <div class="jd-faq-item">
-                <button class="jd-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="jd-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Is my token safe here?
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="jd-faq-a"><div class="jd-faq-a-inner">
-                    Yes. All decoding happens entirely in your browser. Your token is never transmitted to any server or stored anywhere. However, remember that JWTs are not encrypted -- anyone with the token can read the payload. This tool only decodes; it does not verify signatures.
+                    Yes. All decoding happens entirely in your browser. Your token is never transmitted to any server or stored anywhere. However, remember that JWTs are not encrypted -- anyone with the token can read the payload. If you verify the signature, that runs in your browser too, and the key you enter is not sent anywhere.
                 </div></div>
             </div>
 
             <div class="jd-faq-item">
-                <button class="jd-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="jd-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Does this tool verify the signature?
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="jd-faq-a"><div class="jd-faq-a-inner">
-                    No. Signature verification requires the secret key or public key used to sign the token, which this tool intentionally does not ask for. This is a decoder and inspector, not a validator. For signature verification, use your application's JWT library.
+                    Yes, if you want it to. Decoding needs no key. To check the signature, enter the HMAC secret or the public key (PEM) in the Verify Signature panel: it checks HS, RS, PS and ES signatures (256, 384 and 512) in your browser. A valid signature shows the token was signed with that key and has not been changed since; whether your application should accept it (issuer, audience, expiry, revocation) is still for your application to check.
                 </div></div>
             </div>
 
             <div class="jd-faq-item">
-                <button class="jd-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="jd-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What do the standard claims mean?
                     <i class="fas fa-chevron-down"></i>
                 </button>

@@ -450,6 +450,9 @@
             margin-bottom: 2rem;
         }
 
+        .jf-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .jf-tree-more { margin: 0.35rem 0 0.35rem 1rem; padding: 0.2rem 0.6rem; font: inherit; font-size: 0.75rem; color: var(--teal); background: transparent; border: 1px solid currentColor; border-radius: 6px; cursor: pointer; }
+
         .jf-faq-item {
             border: 1px solid var(--line);
             border-radius: 10px;
@@ -574,10 +577,10 @@
 
         <!-- Mode Tabs -->
         <div class="jf-tabs">
-            <button class="jf-tab active" data-mode="single" onclick="jfSwitchMode('single')">
+            <button class="jf-tab active" data-mode="single" aria-pressed="true" onclick="jfSwitchMode('single')">
                 <i class="fas fa-code"></i> Format / Validate
             </button>
-            <button class="jf-tab" data-mode="diff" onclick="jfSwitchMode('diff')" title="Compare two JSON objects side by side and see line-by-line differences">
+            <button class="jf-tab" data-mode="diff" aria-pressed="false" onclick="jfSwitchMode('diff')" title="Compare two JSON objects side by side and see line-by-line differences">
                 <i class="fas fa-columns"></i> Diff Compare
             </button>
         </div>
@@ -598,16 +601,16 @@
                 <button class="jf-btn" onclick="jfRepair()">
                     <i class="fas fa-wrench"></i> Repair
                 </button>
-                <button class="jf-btn" onclick="jfCopyOutput()">
+                <button class="jf-btn" id="jf-copy-btn" onclick="jfCopyOutput()">
                     <i class="fas fa-copy"></i> Copy
                 </button>
-                <button class="jf-btn" onclick="jfDownloadOutput()">
+                <button class="jf-btn" id="jf-download-btn" onclick="jfDownloadOutput()">
                     <i class="fas fa-download"></i> Download
                 </button>
                 <button class="jf-btn" onclick="jfClearAll()">
                     <i class="fas fa-times"></i> Clear
                 </button>
-                <select class="jf-btn" id="jf-indent" style="padding:0.4rem 0.6rem;font-size:0.78rem;cursor:pointer;">
+                <select class="jf-btn" id="jf-indent" aria-label="Indentation" style="padding:0.4rem 0.6rem;font-size:0.78rem;cursor:pointer;">
                     <option value="2">2 spaces</option>
                     <option value="4">4 spaces</option>
                     <option value="tab">Tab</option>
@@ -615,14 +618,14 @@
             </div>
 
             <!-- Error / Success -->
-            <div class="jf-error" id="jf-error">
+            <div class="jf-error" id="jf-error" role="alert">
                 <i class="fas fa-exclamation-triangle"></i>
                 <div class="jf-error-text">
                     <div class="jf-error-title" id="jf-error-title">Invalid JSON</div>
                     <div class="jf-error-detail" id="jf-error-detail"></div>
                 </div>
             </div>
-            <div class="jf-success" id="jf-success">
+            <div class="jf-success" id="jf-success" role="status">
                 <i class="fas fa-check-circle"></i>
                 <span id="jf-success-text">Valid JSON</span>
             </div>
@@ -634,7 +637,7 @@
                         <span class="jf-pane-label">Input</span>
                         <span class="jf-pane-info" id="jf-input-info"></span>
                     </div>
-                    <textarea class="jf-textarea" id="jf-input" placeholder='Paste your JSON here...
+                    <textarea class="jf-textarea" id="jf-input" aria-label="JSON input" placeholder='Paste your JSON here...
 
 Example:
 {"name": "John", "age": 30, "active": true}' spellcheck="false"></textarea>
@@ -666,7 +669,7 @@ Example:
                 </button>
             </div>
 
-            <div class="jf-error" id="jf-diff-error">
+            <div class="jf-error" id="jf-diff-error" role="alert">
                 <i class="fas fa-exclamation-triangle"></i>
                 <div class="jf-error-text">
                     <div class="jf-error-title" id="jf-diff-error-title">Error</div>
@@ -679,20 +682,20 @@ Example:
                     <div class="jf-pane-header">
                         <span class="jf-pane-label">Left (Original)</span>
                     </div>
-                    <textarea class="jf-textarea" id="jf-diff-left" placeholder="Paste first JSON here..." spellcheck="false"></textarea>
+                    <textarea class="jf-textarea" id="jf-diff-left" aria-label="First JSON (left)" placeholder="Paste first JSON here..." spellcheck="false"></textarea>
                 </div>
                 <div class="jf-pane">
                     <div class="jf-pane-header">
                         <span class="jf-pane-label">Right (Modified)</span>
                     </div>
-                    <textarea class="jf-textarea" id="jf-diff-right" placeholder="Paste second JSON here..." spellcheck="false"></textarea>
+                    <textarea class="jf-textarea" id="jf-diff-right" aria-label="Second JSON (right)" placeholder="Paste second JSON here..." spellcheck="false"></textarea>
                 </div>
             </div>
 
             <div id="jf-diff-result" style="display: none;">
                 <div class="jf-diff-header">
                     <span class="jf-pane-label">Diff Result</span>
-                    <div class="jf-diff-stats" id="jf-diff-stats"></div>
+                    <div class="jf-diff-stats" id="jf-diff-stats" role="status"></div>
                 </div>
                 <div class="jf-diff-output" id="jf-diff-output"></div>
             </div>
@@ -725,7 +728,7 @@ Example:
             <h2>Frequently Asked Questions</h2>
 
             <div class="jf-faq-item">
-                <button class="jf-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="jf-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What is JSON and why does formatting matter?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -735,7 +738,7 @@ Example:
             </div>
 
             <div class="jf-faq-item">
-                <button class="jf-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="jf-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Is my data safe? Does anything get uploaded?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -745,7 +748,7 @@ Example:
             </div>
 
             <div class="jf-faq-item">
-                <button class="jf-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="jf-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What's the difference between Format and Minify?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -755,7 +758,7 @@ Example:
             </div>
 
             <div class="jf-faq-item">
-                <button class="jf-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="jf-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What does the Diff Compare mode do?
                     <i class="fas fa-chevron-down"></i>
                 </button>

@@ -590,6 +590,7 @@
                 <button class="mp-action-btn" onclick="mpCopyHtml()"><i class="fas fa-copy"></i> Copy HTML</button>
                 <button class="mp-action-btn" onclick="mpDownload()"><i class="fas fa-download"></i> Download .md</button>
                 <button class="mp-action-btn" onclick="mpExportHtml()"><i class="fas fa-file-code"></i> Export HTML</button>
+                <button class="mp-action-btn" onclick="mpClear()" title="Empty the editor and delete the saved draft"><i class="fas fa-times"></i> Clear</button>
             </div>
         </div>
 
@@ -597,11 +598,11 @@
         <div class="mp-editor">
             <div class="mp-pane">
                 <div class="mp-pane-header">Markdown</div>
-                <textarea class="mp-input" id="mp-input" spellcheck="false" placeholder="Start writing Markdown here..."></textarea>
+                <textarea class="mp-input" id="mp-input" aria-label="Markdown" spellcheck="false" placeholder="Start writing Markdown here..."></textarea>
             </div>
             <div class="mp-pane">
                 <div class="mp-pane-header">Preview</div>
-                <div class="mp-preview" id="mp-preview"></div>
+                <div class="mp-preview" id="mp-preview" role="region" aria-label="Preview"></div>
             </div>
         </div>
 
@@ -635,7 +636,7 @@
             <h2>Frequently Asked Questions</h2>
 
             <div class="mp-faq-item">
-                <button class="mp-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="mp-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     What Markdown features are supported?
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -645,22 +646,22 @@
             </div>
 
             <div class="mp-faq-item">
-                <button class="mp-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="mp-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Is my content sent to a server?
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="mp-faq-a"><div class="mp-faq-a-inner">
-                    No. Markdown parsing is handled entirely in your browser by the marked.js library. Your content never leaves your device and is never stored or logged. The rendered HTML is also sanitized with DOMPurify to prevent XSS.
+                    No. Markdown parsing is handled entirely in your browser by the marked.js library. Your content never leaves your device and is never logged; the only copy kept is the draft this page saves in your browser, which Clear (or emptying the editor) deletes. The rendered HTML is also sanitized with DOMPurify to prevent XSS.
                 </div></div>
             </div>
 
             <div class="mp-faq-item">
-                <button class="mp-faq-q" onclick="this.parentElement.classList.toggle('open')">
+                <button class="mp-faq-q" aria-expanded="false" onclick="this.setAttribute('aria-expanded', this.parentElement.classList.toggle('open'))">
                     Can I use this for README files?
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="mp-faq-a"><div class="mp-faq-a-inner">
-                    Yes. This previewer renders Markdown the same way GitHub does for README.md files. You can write your README here, preview it, and download the .md file to include in your repository. It supports all the formatting you'd typically use in a GitHub README.
+                    Yes. You can write your README here, preview it, and download the .md file to include in your repository. It supports the GitHub Flavored Markdown you'd typically use in a README: tables, task lists, strikethrough and fenced code blocks. One difference: this preview turns every single line break into a line break, as GitHub does in comments, while a README on GitHub joins consecutive lines into one paragraph. Leave a blank line between paragraphs and both look the same.
                 </div></div>
             </div>
         </section>

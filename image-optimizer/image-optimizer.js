@@ -2,6 +2,7 @@
     'use strict';
 
     var optimizedImages = [];
+    var runSeq = 0;
 
     var dropzone     = document.getElementById('io-dropzone');
     var fileInput    = document.getElementById('io-file-input');
@@ -101,19 +102,23 @@
         return { width: w, height: h };
     }
 
-    function processImage(file, outputFormat, quality) {
+    function processImage(file, outputFormat, quality, resize) {
         return new Promise(function (resolve) {
             var reader = new FileReader();
             reader.onload = function (e) {
                 var img = new Image();
                 img.onload = function () {
-                    var resize = getResizeConstraints();
                     var dims = computeResizedDimensions(img.naturalWidth, img.naturalHeight, resize.maxWidth, resize.maxHeight);
 
                     var canvas = document.createElement('canvas');
                     canvas.width = dims.width;
                     canvas.height = dims.height;
                     var ctx = canvas.getContext('2d');
+                    // JPEG has no alpha: without an opaque fill every transparent pixel encodes as black.
+                    if (outputFormat === 'image/jpeg') {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, dims.width, dims.height);
+                    }
                     ctx.drawImage(img, 0, 0, dims.width, dims.height);
 
                     var qualityParam = quality / 100;
@@ -152,25 +157,36 @@
             return;
         }
 
+        // Each run has a number and builds its results privately. A drop made while an earlier batch is still
+        // encoding supersedes it: the earlier run stops at its next await, throws away its own previews and never
+        // touches the grid or the spinner, so two batches can no longer interleave.
+        var run = ++runSeq;
         hideError();
         processingEl.classList.add('visible');
         resultsEl.classList.remove('visible');
 
-        // Revoke stale blob URLs before reprocessing
-        optimizedImages.forEach(function (img) { if (img.previewUrl) URL.revokeObjectURL(img.previewUrl); });
-        optimizedImages = [];
-
+        // Settings are read once, when the run starts.
         var outputFormat = formatSelect.value;
         var quality = parseInt(qualitySlider.value, 10);
+        var resize = getResizeConstraints();
+        var runResults = [];
 
         for (var j = 0; j < imageFiles.length; j++) {
-            var result = await processImage(imageFiles[j], outputFormat, quality);
-            optimizedImages.push(result);
+            var result = await processImage(imageFiles[j], outputFormat, quality, resize);
+            if (run !== runSeq) {
+                runResults.concat([result]).forEach(revokePreview);
+                return;
+            }
+            runResults.push(result);
         }
 
+        optimizedImages.forEach(revokePreview);
+        optimizedImages = runResults;
         processingEl.classList.remove('visible');
         renderResults();
     }
+
+    function revokePreview(img) { if (img && img.previewUrl) URL.revokeObjectURL(img.previewUrl); }
 
     function renderResults() {
         if (optimizedImages.length === 0) { resultsEl.classList.remove('visible'); return; }
@@ -294,7 +310,9 @@
     };
 
     window.ioClearResults = function () {
-        optimizedImages.forEach(function (img) { if (img.previewUrl) URL.revokeObjectURL(img.previewUrl); });
+        runSeq++;                                  // a batch still encoding is discarded, not drawn
+        processingEl.classList.remove('visible');
+        optimizedImages.forEach(revokePreview);
         optimizedImages = [];
         gridEl.innerHTML = '';
         resultsEl.classList.remove('visible');

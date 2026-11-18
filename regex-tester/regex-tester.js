@@ -19,14 +19,19 @@
     let _wUrl = null;
     function wUrl() {
         if (_wUrl) return _wUrl;
-        const src = `self.onmessage=function(e){
+        // After an empty match the scan steps forward by one code point when the u or v flag is set (the spec's
+        // AdvanceStringIndex): stepping one UTF-16 unit into a surrogate pair makes exec match the pair's start
+        // again, forever. A lone high surrogate still steps by one unit.
+        const src = `function adv(s,i,u){if(!u||i+1>=s.length)return i+1;var c=s.charCodeAt(i);
+if(c>=0xD800&&c<=0xDBFF){var n=s.charCodeAt(i+1);if(n>=0xDC00&&n<=0xDFFF)return i+2}return i+1}
+self.onmessage=function(e){
 var d=e.data,r;
 try{r=new RegExp(d.p,d.f)}catch(err){postMessage({k:'e',v:err.message});return}
-var ms=[],gl=d.f.indexOf('g')>=0,m;
+var ms=[],gl=d.f.indexOf('g')>=0,m,u=!!(r.unicode||r.unicodeSets);
 if(gl){while((m=r.exec(d.t))!==null&&ms.length<d.m){
 var ng=null;if(m.groups){ng={};for(var k in m.groups)ng[k]=m.groups[k]}
 ms.push({v:m[0],i:m.index,l:m[0].length,g:Array.prototype.slice.call(m,1),n:ng});
-if(!m[0].length){r.lastIndex++;if(r.lastIndex>d.t.length)break}
+if(!m[0].length){r.lastIndex=adv(d.t,r.lastIndex,u);if(r.lastIndex>d.t.length)break}
 }}else{m=r.exec(d.t);if(m){
 var ng=null;if(m.groups){ng={};for(var k in m.groups)ng[k]=m.groups[k]}
 ms.push({v:m[0],i:m.index,l:m[0].length,g:Array.prototype.slice.call(m,1),n:ng})}}
@@ -42,11 +47,15 @@ postMessage({k:'r',ms:ms,tr:gl&&ms.length>=d.m})}`;
     }
 
     flagButtons.forEach(btn => {
-        btn.addEventListener('click', () => { btn.classList.toggle('active'); runMatch(); });
+        btn.setAttribute('aria-pressed', btn.classList.contains('active') ? 'true' : 'false');
+        btn.addEventListener('click', () => {
+            btn.setAttribute('aria-pressed', btn.classList.toggle('active') ? 'true' : 'false');
+            runMatch();
+        });
     });
 
     function esc(s) {
-        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     let activeW = null;
@@ -152,19 +161,22 @@ postMessage({k:'r',ms:ms,tr:gl&&ms.length>=d.m})}`;
         }
         let rows = '';
         ms.forEach((m, i) => {
-            const indexed = m.g.filter(v => v !== undefined && v !== null);
+            // Every group keeps its number: an unmatched group reads as a dash, an empty match reads "".
+            const indexed = m.g.map((v, gi) => '$' + (gi + 1) + ': ' +
+                (v === undefined || v === null ? '<i style="opacity:.5" title="did not participate">&ndash;</i>'
+                    : v === '' ? '<i style="opacity:.5">""</i>' : esc(String(v))));
             let named = '';
             if (m.n && Object.keys(m.n).length) {
                 named = '<div class="rt-named-groups">' +
                     Object.keys(m.n).map(k =>
-                        '<span class="rt-named-tag">' + esc(k) + '=<em>' + esc(String(m.n[k] ?? '')) + '</em></span>'
+                        '<span class="rt-named-tag">' + esc(k) + '=<em>' + (m.n[k] === undefined || m.n[k] === null ? '&ndash;' : esc(String(m.n[k]))) + '</em></span>'
                     ).join(' ') + '</div>';
             }
             rows += '<div class="rt-match-row">' +
                 '<span class="rt-match-idx">' + (i + 1) + '</span>' +
                 '<span class="rt-match-val">' + (m.v ? esc(m.v) : '<i style="opacity:.5">empty</i>') + '</span>' +
                 '<span class="rt-match-pos">' + m.i + '\u2013' + (m.i + m.l) + '</span>' +
-                '<span class="rt-match-groups">' + (indexed.length ? indexed.map(v => esc(String(v))).join(', ') : '\u2013') + named + '</span>' +
+                '<span class="rt-match-groups">' + (indexed.length ? indexed.join(', ') : '\u2013') + named + '</span>' +
                 '</div>';
         });
         if (truncated) {

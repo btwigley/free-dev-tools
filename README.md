@@ -18,7 +18,20 @@ Six browser-based developer utilities. No sign-up, no server, no tracking. Every
 - **100% Client-Side** — Nothing you paste or drop is uploaded; all processing happens in your browser. The pages load their libraries and fonts from public CDNs. In the Markdown Previewer, remote images in your document stay unloaded until you click **Load remote images**, because loading one contacts the server that hosts it.
 - **No Sign-Up** — No accounts, no cookies, no tracking.
 - **Open Source** — MIT licensed. Fork it, self-host it, modify it.
-- **Mobile Friendly** — Responsive design works on all devices.
+- **Mobile Friendly** — Responsive layout; on a phone the top navigation scrolls sideways.
+
+## What stays in your browser
+
+Two tools keep something in your browser's `localStorage`, on your device only:
+
+- **JSON Formatter** remembers your indentation choice (`jf_indent`).
+- **Markdown Previewer** saves your current draft (`mp_autosave`) so it is still there when you come back. Emptying the editor or pressing **Clear** deletes it.
+
+Nothing else is stored, and nothing is sent anywhere.
+
+## Hosted version
+
+The same six tools also run on [wigleystudios.com/free-resources](https://wigleystudios.com/free-resources/), inside the Wigley Studios site. That copy adds the site's navigation, analytics and product recommendations, and its Image Optimizer re-encodes PNG with a quality slider (UPNG.js); this repository is the standalone version without any of that.
 
 ## Self-Hosting
 
@@ -47,6 +60,11 @@ No build step required. All dependencies are loaded from CDN.
 - [JSZip](https://stuk.github.io/jszip/) — ZIP file generation
 - [marked](https://github.com/markedjs/marked) — Markdown parsing
 - [DOMPurify](https://github.com/cure53/DOMPurify) — HTML sanitization
+- [highlight.js](https://highlightjs.org/) — code highlighting in the Markdown Previewer (its GitHub Dark theme is also inlined into exported HTML files)
+
+## Issues
+
+Found a bug or a wrong result? [Open an issue](https://github.com/btwigley/free-dev-tools/issues) with the input that caused it.
 
 ## License
 
