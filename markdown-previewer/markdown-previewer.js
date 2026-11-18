@@ -98,9 +98,14 @@
     remoteNotice.appendChild(remoteNoticeBtn);
     preview.parentNode.insertBefore(remoteNotice, preview);
 
-    function sanitize(html) {
+    // A string for copy and export; for the live preview, DOM nodes (asDom), inserted as they are. Parsing the
+    // sanitizer's string a second time through innerHTML is the mutation-XSS condition (DOMPurify 3.0.8 had a known
+    // bypass of it; now 3.4.18).
+    function sanitize(html, asDom) {
         blockedCount = 0;
-        return DOMPurify.sanitize(html, allowRemote ? {} : { FORBID_TAGS: ['style'] });
+        var config = allowRemote ? {} : { FORBID_TAGS: ['style'] };
+        if (asDom) config.RETURN_DOM_FRAGMENT = true;
+        return DOMPurify.sanitize(html, config);
     }
 
     function render() {
@@ -112,7 +117,7 @@
             return;
         }
         var html = marked.parse(raw);
-        preview.innerHTML = sanitize(html);
+        preview.replaceChildren(sanitize(html, true));
         remoteNotice.hidden = blockedCount === 0;
         remoteNotice.style.display = blockedCount === 0 ? 'none' : 'flex';
         remoteNoticeText.textContent = blockedCount + ' remote resource' + (blockedCount === 1 ? '' : 's') +
