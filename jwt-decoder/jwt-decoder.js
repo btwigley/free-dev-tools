@@ -32,8 +32,11 @@
     const PSS_ALG = { PS256: { hash: 'SHA-256', salt: 32 }, PS384: { hash: 'SHA-384', salt: 48 }, PS512: { hash: 'SHA-512', salt: 64 } };
     const EC_ALG = { ES256: { hash: 'SHA-256', curve: 'P-256' }, ES384: { hash: 'SHA-384', curve: 'P-384' }, ES512: { hash: 'SHA-512', curve: 'P-521' } };
 
+    const verifyBtn = document.querySelector('.jd-verify-btn');
+
     let lastParts = null;
     let lastAlg = null;      // the header's alg, only when it is a string
+    let lastToken = null;    // the exact input text lastParts/lastAlg were decoded from
     let verifySeq = 0;       // bumped by every token or key edit; a check whose number is stale draws nothing
 
     function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
@@ -57,6 +60,16 @@
     function invalidateVerify() {
         verifySeq++;
         if (verifyResultDiv) verifyResultDiv.innerHTML = '';
+    }
+
+    // A token edit drops the decoded snapshot at once, so a Verify click inside the 150 ms decode debounce has no
+    // old token to check; decode() re-enables the button for the new one.
+    function dropSnapshot() {
+        lastParts = null;
+        lastAlg = null;
+        lastToken = null;
+        invalidateVerify();
+        if (verifyBtn) verifyBtn.disabled = true;
     }
 
     function b64Decode(str) {
@@ -123,10 +136,7 @@
         claimsDiv.classList.add('jd-hidden');
         if (algWarningDiv) algWarningDiv.classList.remove('visible');
         if (verifySection) verifySection.classList.add('jd-hidden');
-        invalidateVerify();
-
-        lastParts = null;
-        lastAlg = null;
+        dropSnapshot();
 
         if (!token) return;
 
@@ -166,6 +176,7 @@
         const algIsString = typeof header.alg === 'string';
         lastParts = parts;
         lastAlg = algIsString ? header.alg : null;
+        lastToken = token;
 
         headerDiv.innerHTML = syntaxHighlight(header);
         payloadDiv.innerHTML = syntaxHighlight(payload);
@@ -247,11 +258,15 @@
                 ? 'Enter the HMAC secret...'
                 : '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----';
             verifySection.classList.remove('jd-hidden');
+            if (verifyBtn) verifyBtn.disabled = false;
         }
     }
 
     window.jdVerify = async function () {
         if (!verifyResultDiv || !verifyKeyInput || !lastParts || !lastAlg) return;
+        // Bound to the input it starts from: if the field no longer holds the decoded token, nothing runs.
+        const token = lastToken, parts = lastParts;
+        if (token === null || input.value.trim() !== token) return;
         const seq = ++verifySeq;
         verifyResultDiv.innerHTML = '';
         const keyVal = verifyKeyInput.value.trim();
@@ -269,11 +284,12 @@
             }
         }
         // The check below awaits WebCrypto; it draws its result only if no token or key edit happened meanwhile.
-        function show(html) { if (seq === verifySeq) verifyResultDiv.innerHTML = html; }
+        // A completion is dropped if a newer check started or the token field changed while it ran.
+        function show(html) { if (seq === verifySeq && input.value.trim() === token) verifyResultDiv.innerHTML = html; }
         let data, sig;
         try {
-            data = new TextEncoder().encode(lastParts[0] + '.' + lastParts[1]);
-            sig = b64ToUint8(lastParts[2]);
+            data = new TextEncoder().encode(parts[0] + '.' + parts[1]);
+            sig = b64ToUint8(parts[2]);
         } catch (e) {
             show('<span class="jd-verify-error"><i class="fas fa-exclamation-triangle"></i> The signature part is not valid base64url.</span>');
             return;
@@ -333,7 +349,7 @@
 
     let debounceTimer;
     input.addEventListener('input', function () {
-        invalidateVerify();
+        dropSnapshot();
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(decode, 150);
     });
